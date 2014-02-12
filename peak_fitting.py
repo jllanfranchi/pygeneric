@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-#### ** Modeled after (or copied from???) code by Kasey Russell **
+
+#### ** Some of below code is modeled after (or copied from???) code by Kasey
+####    Russell
 
 from __future__ import division
     
@@ -32,6 +34,132 @@ import timeAndFreq as tf
 # TODO: Constrained optimization, especially keeping frequency of peak
 #       and amplitude sign (PEAK vs. NULL) within desired ranges so as to
 #       truly optimize fit and get a rational result out.
+
+
+def structurallyDampedRes(params, angFreq):
+    '''
+    Model of a single mass-spring system with only structural (hysteretic)
+    damping (i.e., no viscous damping)
+
+    X-values are given by
+        angFreq, omega
+
+    Model parameters and the variables typically used for them are
+        ampl0, A0 = F0/m
+        resFreq, omega_0 = sqrt(k/m)
+        qFactor, Q = 1/eta
+    '''
+    ampl0 = params['ampl0']
+    resFreq = params['resFreq']
+    qFactor = params['qFactor']
+
+    #B = -2j*lossFactor*springConst*mass-2*springConst*mass+2*mass**2*angFreq**2
+    #ampl = 4*force*mass**2 * (-1j*lossFactor*springConst -
+    #                          springConst + mass*angFreq**2) / ( -B**2 )
+    ampl = ampl0/(angFreq**2 - resFreq**2*(1-1j/qFactor))
+    return ampl
+
+
+def viscAndStructDampedRes(params, angFreq):
+    '''
+    Model of a single mass-spring-damper system with both viscous and
+    structural (hysteretic) damping
+
+    X-values are given by
+        angFreq, omega
+
+    Model parameters and the variables typically used for them are
+        mass, m
+        springConst, k
+        lossFactor, eta
+        viscousDamping, gamma
+        force, F0
+
+    '''
+    mass = params['mass']
+    springConst = params['springConst']
+    lossFactor = params['lossFactor']
+    viscousDamping = params['viscousDamping']
+    force = params['force']
+
+    A = viscousDamping*np.sqrt(
+        viscousDamping**2 - 4j*lossFactor*springConst*mass - 4*springConst*mass)
+    B = viscousDamping**2 - 2j*lossFactor*springConst*mass \
+            - 2*springConst*mass + 2*mass**2*angFreq**2
+    ampl = 4*force*mass**2 * ( -1j*lossFactor*springConst - springConst \
+                              + mass*angFreq**2 - gamma*angFreq*(pi*1j/2) ) \
+            / ( (A+B)*(A-B) )
+    return ampl
+
+
+def twoCoupledOscViscousDamping(params, omega):
+    '''
+    Model of two coupled mass-spring-damper systems, where there is no
+    loss in the coupling term.
+
+    X-values are given by 
+        omega
+
+    Model parameters are
+        alpha0 -- nominal driving force
+        r_alpha -- ratio of driving forces
+        omega1 -- angular frequency of first resonance
+        omega2 -- angular frequency of second resonance
+        Q1 -- Q factor for first resonance
+        Q2 -- Q factor for second resonance
+        coupling -- strength of coupling between the two
+        r_mass -- ratio of masses
+    '''
+    alpha0 = params['alpha0'].value
+    r_alpha = params['r_alpha'].value
+    omega1 = params['omega1'].value
+    omega2 = params['omega2'].value
+    Q1 = params['Q1'].value
+    Q2 = params['Q2'].value
+    coupling = params['coupling'].value
+    r_mass = params['r_mass'].value
+    #dc_offset = params['dc_offset'].value
+   
+    zeta1 = 1/(2*Q1)
+    zeta2 = 1/(2*Q2)
+
+    model = \
+        (-( \
+            ( \
+                alpha0*( \
+                    coupling*(-1+r_mass*r_alpha) \
+                    + r_alpha*(-2*1j*zeta2*omega+omega**2-omega2**2) \
+                ) \
+            ) \
+            / (  \
+                (-2*1j* zeta1* omega + omega**2 - omega1**2) \
+                * (-2*1j* zeta2 *omega + omega**2 - omega2**2) \
+                + coupling*( \
+                    omega*( \
+                        -2*1j*(r_mass*zeta1+zeta2) \
+                        + (1 + r_mass)*omega \
+                    ) \
+                    - r_mass*omega1**2 \
+                    - omega2**2 \
+                ) \
+            ) \
+        ) \
+        + ( \
+            1j*alpha0*( \
+                coupling*(-1+r_mass*r_alpha) \
+                + 2*1j*zeta1*omega - omega**2 + omega1**2 \
+            ) \
+        ) \
+        / ( \
+            (2*zeta1*omega + 1j*(omega - omega1)*(omega + omega1))  \
+            * (-2*1j* zeta2*omega + omega**2 - omega2**2)  \
+            + coupling*(  \
+                omega*(2*(r_mass*zeta1 + zeta2) + 1j*(1+r_mass)*omega)  \
+                - 1j*r_mass*omega1**2 - 1j*omega2**2  \
+            )  \
+          ))
+    
+    return model
 
 
 def complLorentzian(freq, x0, beta, gamma, phi0):

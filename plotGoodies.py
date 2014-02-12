@@ -30,7 +30,32 @@ colorCycleOrthog = [
     '#FF7A5C', #Strong Yellowish Pink
 ]
 
+colorCycleRainbow = [
+    '#8000FF',
+    '#4E4DFC',
+    '#1C93F3',
+    '#17CBE4',
+    '#48F1D0',
+    '#7AFFB7',
+    '#ACF59A',
+    '#DED579',
+    '#FFA055',
+    '#FF5C2F',
+    '#FF1008']
 
+
+
+def generateColorCycle(cmap, nColors):
+    stepSize = int(np.floor(cmap.N/nColors))
+    colorCycle = [ "#%0.2X%0.2X%0.2X" % tuple(np.round(c[0:3]*255))
+         for c in cmap(range(0,nColors*stepSize+1,stepSize)) ]
+    return colorCycle
+
+def peakInfo(xdata, ydata):
+    maxvalind = np.argmax(ydata)
+    maxx = xdata[maxvalind]
+    #halfPower = 
+    halfInd = find(ydata < halfPower)
 
 def onpick_peakfind(event):
     '''Use this by:
@@ -40,7 +65,8 @@ def onpick_peakfind(event):
         >> fig.canvas.mpl_connect('pick_event', onpick_peakfind)
 
     '''
-    #print event, event.canvas
+    print event, event.canvas
+
     thisline = event.artist
     vis = thisline.get_visible()
     #-- This function doesn't handle the lines in the legend
@@ -183,3 +209,129 @@ def onpickLegend_toggle(event):
         pass
 
 
+def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
+                title=None, xlabel=None,
+                magPlot=True, phasePlot=True, realPlot=True, imagPlot=True,
+                magScale='log', phaseScale='deg', realScale='linear',
+                imagScale='linear', freqScale='log', fignum=301):
+
+    nPlots = magPlot + phasePlot + realPlot + imagPlot
+
+    #plt.close(fignum)
+    if fig_kwargs == None:
+        fig = plt.figure(fignum, figsize=(7,2.00*nPlots))
+    else:
+        fig = plt.figure(fignum, **fig_kwargs)
+  
+    if plot_kwargs == None:
+        plot_kwargs = [{}]*nPlots
+    elif isinstance(plot_kwargs, dict):
+        plot_kwargs = [plot_kwargs]*nPlots
+
+    #-- Stack plots directly on top of one another
+    #plt.subplots_adjust(hspace=0.001)
+    
+    #fig.clf()
+    
+    plotN = 0
+    axesList = []
+    xticklabels = []
+    magSq = (np.abs(data))**2
+    if magPlot:
+        plotN += 1
+        kwargs = plot_kwargs.pop(0)
+        ax = fig.add_subplot(nPlots, 1, plotN)
+        ax.plot(f, magSq, label=label, **kwargs)
+        ax.set_ylabel("Mag squared")
+        ax.grid(b=True)
+        ax.set_yscale(magScale)
+        axesList.append(ax)
+        if plotN < nPlots:
+            xticklabels += ax.get_xticklabels()
+        ax.set_xscale(freqScale)
+        ax.set_xlim(min(f), max(f))
+        if plotN == 1 and title != None:
+            ax.set_title(title)
+        if label != None:
+            ax.legend(loc='best')
+    
+    if phasePlot:
+        plotN += 1
+        if plotN == 1:
+            sharex = None
+        else:
+            sharex = axesList[0]
+        kwargs = plot_kwargs.pop(0)
+        phi = np.arctan2(np.imag(data), np.real(data))
+        if phaseScale == 'deg':
+            phaseUnits = r"deg"
+            phi = phi*180/np.pi
+        else:
+            phaseUnits = r"rad"
+        ax = fig.add_subplot(nPlots, 1, plotN, sharex=sharex)
+        ax.plot(f, phi, label=label, **kwargs)
+        ax.set_ylabel(r"Phase (" + phaseUnits + r")")
+        ax.grid(b=True)
+        axesList.append(ax)
+        if plotN < nPlots:
+            xticklabels += ax.get_xticklabels()
+        ax.set_xscale(freqScale)
+        ax.set_xlim(min(f), max(f))
+        if plotN == 1 and title != None:
+            ax.set_title(title)
+        if label != None:
+            ax.legend(loc='best')
+    
+    if realPlot:
+        plotN += 1
+        if plotN == 1:
+            sharex = None
+        else:
+            sharex = axesList[0]
+        kwargs = plot_kwargs.pop(0)
+        ax = fig.add_subplot(nPlots, 1, plotN, sharex=sharex)
+        ax.plot(f, np.real(data), label=label, **kwargs)
+        ax.set_ylabel("Real")
+        ax.grid(b=True)
+        axesList.append(ax)
+        if plotN < nPlots:
+            xticklabels += ax.get_xticklabels()
+        ax.set_xscale(freqScale)
+        ax.set_yscale(realScale)
+        ax.set_xlim(min(f), max(f))
+        if plotN == 1 and title != None:
+            ax.set_title(title)
+        if label != None:
+            ax.legend(loc='best')
+     
+    if imagPlot:
+        plotN += 1
+        if plotN == 1:
+            sharex = None
+        else:
+            sharex = axesList[0]
+        kwargs = plot_kwargs.pop(0)
+        ax = fig.add_subplot(nPlots, 1, plotN, sharex=sharex)
+        ax.plot(f, np.imag(data), label=label, **kwargs)
+        ax.set_ylabel("Imaginary")
+        ax.grid(b=True)
+        axesList.append(ax)
+        if plotN < nPlots:
+            xticklabels += ax.get_xticklabels()
+        ax.set_xscale(freqScale)
+        ax.set_yscale(imagScale)
+        ax.set_xlim(min(f), max(f))
+        if plotN == 1 and title != None:
+            ax.set_title(title)
+        if label != None:
+            ax.legend(loc='best')
+     
+    ax.set_xscale(freqScale)
+    if xlabel != None:
+        ax.set_xlabel(xlabel)
+
+    #plt.setp(xticklabels, visible=False)
+
+    #fig.tight_layout()
+
+    return fig, axesList
