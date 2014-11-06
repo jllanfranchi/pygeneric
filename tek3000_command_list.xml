@@ -1,0 +1,600 @@
+<AcquisitionCommands>
+ACQuire? Return acquisition parameters
+ACQuire:MODe Acquisition mode
+ACQuire:NUMACq? Return # of acquisitions obtained
+ACQuire:NUMAVg Number of acquisitions for average
+ACQuire:NUMEnv Number of acquisitions for envelope
+ACQuire:STATE Start or stop acquisition system
+ACQuire:STOPAfter Acquisition control
+AUTOSet Automatic instrument waveform acquisition setup
+WAVEAlert:BEEP (TDS3000B and TDS3000C Series) Sets or returns the WaveAlert Beep on Anomaly function
+WAVEAlert:hard copy (TDS3000B and TDS3000C Series) Sets or returns the WaveAlert print Hard Copy on Anomaly function
+WAVEAlert:SAVEWFM (TDS3000B and TDS3000C Series) Sets or returns the WaveAlert Save Waveform to memory on Anomaly function
+WAVEAlert:SENSitivity (TDS3000B and TDS3000C Series) Sets or returns the WaveAlert Anomaly sensitivity function
+WAVEAlert:STATE (TDS3000B and TDS3000C Series) Sets or returns the WaveAlert testing mode
+WAVEAlert:STOPOnviolation (TDS3000B and TDS3000C Series) Sets or returns the Stop on Violation mode
+WAVEAlert:TYPe (TDS3000B and TDS3000C Series) Sets or returns the WaveAlert Highlight Anomaly mode
+</AcquisitionCommands>
+
+<AliasCommands>
+ALIas Turn the alias state on and off
+ALIas:CATALOG? Return a list of aliases
+ALIas:DEFINE Create a new alias
+ALIas:DELEte Remove an alias
+ALIas:DELEte:ALL Remove all aliases
+ALIas:DELEte:NAME Remove a named alias
+ALIas:STATE Turn the alias state on and off
+</AliasCommands>
+
+<CalibrationAndDiagnosticCommands>
+CAL? Returns status of CALibrate:INTERNal and CALibrate:FACtory
+*CAL? Returns status and invokes CALibrate:INTERNal?
+CALibrate:FACtory:ABOrt Aborts the calibration factory process
+CALibrate:FACtory:CONTInue Instructs the instrument to execute the current factory calibration step
+CALibrate:FACtory:NOTIfy:DUE? Queries if calibration is due
+CALibrate:FACtory:NOTIfy:HOURs Sets and returns hours until calibration is due
+CALibrate:FACtory:NOTIfy:YEARs Sets and returns number of year until calibration is due
+CALibrate:FACtory:PREVious Instructs the instrument to back up one step to allow the next
+CALibrate:FACtory:CONTInue command to repeat that step
+CALibrate:FACtory:STARt Begins the factory calibration sequence
+CALibrate:FACtory:STATUS? Returns the factory calibration status value
+CALibrate:FACtory:STEPstatus? Returns the status of the last factory cal step executed. After cal sequence is complete, returns the same status as CALibrate:FACtory:STATUS?
+CALibrate:INTERNal Executes or queries the state of signal path compensation (SPC)
+CALibrate:INTERNal:STARt Performs signal path compensation (SPC)
+CALibrate:INTERNal:STATUS? Return the SPC calibration status value saved in non-volatile memory
+DIAg:LOOP:OPTion Sets the diagnostic loop option
+DIAg:LOOP:STOP Stops diagnostic at the end of the current loop
+DIAg:RESUlt:FLAg? Returns the PASS or FAIL status from the last FAIL diagnostic test sequence results
+DIAg:RESUlt:LOG? Return diagnostic test sequence results
+DIAg:SELect:ALL Diagnostics will be run on all subsystems
+DIAg:STATE EXECute Executes all the diagnostics tests that have been selected
+</CalibrationAndDiagnosticCommands>
+
+<CursorCommands>
+CURSor:VBArs:HDELTa? Returns the horizontal difference between the two vertical bar cursors
+CURSor:VBArs:HPOS<x>? Returns the value of vertical bar ticks
+CURSor:VBArs:POSITION<x> Sets the horizontal position for both vertical bars
+CURSor:VBArs:SELect Sets which vertical cursor is active (selected)
+CURSor:VBArs:UNIts Sets or returns measurement units for the vertical cursors
+CURSor:VBArs:USE Sets measurement scale for the vertical cursors
+CURSor:VBArs:VDELTa? Returns the value difference between the vertical bar ticks
+CURSor:WAVEform:SELect Selects (makes active) the specified waveform XY cursor
+CURSor:XY:PRODDelta? Returns the value of the XY cursor product delta readout
+CURSor:XY:PRODUCT<x>? Returns the value of the product readout for the specified XY cursor
+CURSor:XY:RADIUS<x>? Returns the XY cursor radius value from the 0,0 origin to the specified XY cursor
+CURSor:XY:RATDELta? Returns the XY cursor ratio delta value
+CURSor:XY:RATIO<x>? Returns the cursor ratio value for the specified XY cursor
+CURSor:XY:RDELta? Returns the XY cursor radius delta value for the polar readout.
+CURSor:XY:READOUT Sets or returns the XY cursor readout format
+CURSor:XY:RECTX<x>? Returns the XY cursor X-axis rectangular coordinate value for the specified cursor
+CURSor:XY:RECTY<x>? Returns the XY cursor Y-axis rectangular coordinate value for the specified cursor
+CURSor:XY:THDELta? Returns the XY cursor polar readout delta theta value
+CURSor:XY:THETA<x>? Returns the polar readout theta value for the specified XY cursor
+CURSor:XY:XDELta? Returns the difference (delta) between the X-axis values of the two XY cursors
+CURSor:XY:YDELta? Returns the value of the difference (delta) between the Y-axis values of the two XY cursors
+</CursorCommands>
+
+<DisplayCommands>
+CLEARMenu Clear menus from display
+DISplay? Returns display settings
+DISplay:CLOCk Control the display of the date/time
+DISplay:COLor:PALEtte:REGular Sets current palette to a preset palette
+DISplay:FORMat Sets display format to XY, YT, or Gated XYZ
+DISplay:GRAticule Sets type of graticule that is displayed
+DISplay:INTENSITy:BACKLight Sets backlight intensity settings
+DISplay:INTENSITy:WAVEform Sets waveform brightness
+DISplay:PERSistence Sets variable persistence decay time
+DISplay:PERSistence:CLEAR Resets the persistence time clears the screen of all acquired points
+DISplay:STYle:DOTsonly Sets dots to on or off
+DISplay:XY? Returns all the XY parameters
+DISplay:XY:MODe Sets the display to YT, triggered XY, or Gated XYZ
+DISplay:XY:YCHannel Specifies the Y channel to be displayed with channel 1
+DISplay:XY:YREF Specifies the Y channel to be displayed with reference 1
+DISplay:XY:ZCHannel Specifies the Z channel to use in gated XYZ mode
+DISplay:XY:ZLEVel Specifies the Z channel threshold level to enable XY gating in gated XYZ mode
+MESSage:BOX Sets size and location of message window
+MESSage:CLEAR Removes text from the message window
+MESSage:SHOW Displays message text in the message window
+MESSage:STATE Control display of message window
+</DisplayCommands>
+
+<EthernetCommands>
+ETHERnet:DCHPBOOTP Sets or returns DCHP/BOOTP function status
+ETHERnet:DNS:IPADDress Sets or returns the Domain Name Server (DNS) address stored in the oscilloscope
+ETHERnet:DOMainname Sets or returns the Domain Name Server (DNS) name stored in the oscilloscope
+ETHERnet:ENETADDress? Returns the factory-set ethernet address of the TDS3EM module or oscilloscope
+ETHERnet:GATEWay Sets or returns the Gateway IP address value
+ETHERnet:HTTPPORT Sets or returns the HTTP port value stored in the oscilloscope
+ETHERnet:IPADDress Sets or returns the IP address of the oscilloscope
+ETHERnet:NAME Sets or returns the oscilloscope instrument name
+ETHERnet:NETPRInter:ADD Adds the specified printer to the oscilloscope ethernet printer list
+ETHERnet:NETPRInter:DELEte Deletes the specified printer from the oscilloscope ethernet printer list
+ETHERnet:NETPRInter:DELWarn Enables or disables displaying a warning message when deleting a printer
+ETHERnet:NETPRInter:REName Renames the specified ethernet printer
+ETHERnet:NETPRInter:SELect: ALLInfo? Returns the selected (active) printer configuration information
+ETHERnet:NETPRInter:SELect:NAME Sets or returns the identity of the selected (active) ethernet printer
+ETHERnet:PASSword Sets the ethernet password
+ETHERnet:PING:EXECUTE Tests the Ethernet connection
+ETHERnet:PING:STATUS? Returns results of Ethernet connection testing
+ETHERnet:SUBNETMASK Sets or returns the Ethernet subnet mask value
+</EthernetCommands>
+
+<FileSystemCommands>
+FILESystem? Returns results of queries
+FILESystem:COPy Copies file to new file
+FILESystem:CWD Sets or returns the current directory
+FILESystem:DELEte Deletes named file or directory
+FILESystem:DELWarn Turns front panel delete confirmation feature on or off
+FILESystem:DIR? Returns a list of files in current directory
+FILESystem:FORMat Formats named drive
+FILESystem:FREESpace? Returns free space on current memory storage device
+FILESystem:MKDir Creates a new directory
+FILESystem:OVERWrite Sets overwrite lock feature on or off
+FILESystem:PRInt Prints file to port
+FILESystem:REName Assigns new name to file
+FILESystem:RMDir Deletes directory and all files in the directory
+</FileSystemCommands>
+
+<FrontPanelCommands>
+FPAnel:PRESS Sets which front panel button to activate
+FPAnel:TURN Sets which front panel control knob to activate
+</FrontPanelCommands>
+
+<HardCopyCommands>
+HARDCopy Start or terminate hard copy
+HARDCopy:COMPRESSion Enables/disables hard copy data compression
+HARDCopy:FILEName Selects file to which to write hard copy
+HARDCopy:FORMat Hard copy output format
+HARDCopy:INKSaver Sets oscilloscope to print reduced ink usage hard copy
+HARDCopy:LAYout Hard copy orientation
+HARDCopy:PALEtte Select palette to use when making hard copy
+HARDCopy:PORT Selects hard copy port
+HARDCopy:PREVIEW Displays how the colors will appear
+</HardCopyCommands>
+
+<HorizontalCommands>
+HORizontal? Return horizontal settings
+HORizontal:DELay:STATe Delay the acquisition relative to the trigger event
+HORizontal:DELay:TIMe Sets the delay time in seconds
+HORizontal:MAIn:SCAle Main time base time per division
+HORizontal:MAIn:SECdiv Same as HORizontal:MAIn:SCAle
+HORizontal:RECOrdlength Values are 500 or 10000
+HORizontal:RESOlution Sets acquisition resolution to normal or fast trigger
+HORizontal:SCAle Same as HORizontal:MAIn:SCAle
+HORizontal:SECdiv Same as HORizontal:MAIn:SCAle
+HORizontal:TRIGger:POSition Time base trigger position
+ZOOm:HORizontal:POSition Values are 0 to 100, in percent of record
+ZOOm:HORizontal:SCAle Sets or returns the horizontal scale when in zoom
+ZOOm:STATE Activates the zoom function
+</HorizontalCommands>
+
+<ITU601Commands>
+ITU601:AUTOSet Sets the instrument to automatically acquire and display a 601 digital video signal
+ITU601:EDH RESEt Sets the EDH error count to zero
+ITU601:EDH:COUNt Sets or returns the state of the EDH error counter
+ITU601:EDH:DETect? Returns the state of the EDH detection
+ITU601:EDH:NUMERRors? Returns the number of 601 digital video EDH errors
+ITU601:INPUT:FORMat Sets or returns the digital video signal input format (525 or 625)
+ITU601:INPUT:SIGnalstrength? Returns the digital video signal strength
+ITU601:INPUT:STATE? Returns the input signal state
+ITU601:OUTput:FORMat Sets or returns the format for displaying the digital video signal components.
+</ITU601Commands>
+
+<LimitCommands>
+LIMit? Returns all limit testing parameters
+LIMit:BEEP Beeps when limit exceeded
+LIMit:BELl Same as LIMit:BEEP
+LIMit:COMpare:CH<x> Template to compare waveform to
+LIMit:HARDCopy Prints a hard copy when limit exceeded
+LIMit:SAVEWFM Save waveform to memory storage device
+LIMit:STATE Turn limit testing on or off
+LIMit:STOPOnviolation Sets or returns the stop on violation mode
+LIMit:TEMPLate Template to compare waveform to
+LIMit:TEMPLate:DESTination Reference storage for template waveform
+LIMit:TEMPLate:SOUrce Template waveform source
+LIMit:TEMPLate:TOLerance: HORizontal Template horizontal tolerance
+LIMit:TEMPLate:TOLerance:VERTical Template vertical tolerance
+</LimitCommands>
+
+<MaskCommands>
+MASK:AUTOFit Sets or returns the autofit radius setting
+MASK:COPy:SOUrce Sets or returns the mask standard to copy to the User mask when the MASK:COPy:USER command is executed
+MASK:COPy:USER Copies the mask defined by
+MASK:COPy:SOUrce to the user mask
+MASK:COUNt:CH<x>:HITS? Returns the total hits on all mask segments for the specified channel
+MASK:COUNt:FAILURES? Returns the number of pass/fail tests that have failed
+MASK:COUNt:HITS? Returns the total number of mask hits for all channels on all mask segments
+MASK:COUNt:MASK<m>:CH<x>: HITS? Returns the number of hits for channel <x> in mask segment <m>
+MASK:COUNt:MASK<m>:HITS? Returns the number of hits for all channels in mask segment <m>
+MASK:COUNt:STATE Sets or returns the mask hits count state
+MASK:COUNt:TESTS? Returns the number of pass/fail tests that have occurred when MASK:TESt:REPeat is turned on
+MASK:COUNt:TOTal? Returns the sum of all hits in all mask segments
+MASK:COUNt:VIOLATIONS? Returns the number of test violations which have occurred in the current pass/fail test
+MASK:COUNt:WAVEFORMS? Returns the number of waveforms which have been acquired and processed during pass/fail testing
+MASK:DISplay Sets or returns the mask violation detection and display status
+MASK:LOCk Sets or returns the mask lock to waveform mode
+MASK:MARGIN:HORizontal Sets or returns the User mask’s horizontal margin percentage
+MASK:MARGIN:VERTical Sets or returns the User mask’s vertical margin percentage
+MASK:MASK<m> DELEte Deletes the specified mask segment from the User mask, whether or not the User mask is the current mask
+MASK:MASK<m>:COUNt? Returns the number of hits on the specified mask segment in the current mask
+MASK:MASK<m>:NR_Pt? Returns the number of points that make up the specified mask segment of the currently-displayed mask
+MASK:MASK<m>:POINTS Sets or returns the X-Y user coordinates of all points in the specified mask segment
+MASK:MASK<m>:POINTSNorm Sets or returns the normalized coordinate points of the specified mask segment
+MASK:MASK<m>:POINTSPcnt Sets or returns the points in the specified mask segment, in percentage coordinates
+MASK:MASKPRE:AMPlitude Sets or returns the current mask’s nominal pulse amplitude in volts
+MASK:MASKPRE:HSCAle Sets or returns the nominal timing resolution used to draw the mask, in time/division
+MASK:MASKPRE:HTRIGPOS Sets or returns the nominal trigger position (pulse leading edge) used to draw the mask as a fraction of the display width
+MASK:MASKPRE:PATTERNBITS Sets or returns the number of bits used for serial trigger for the current standard
+MASK:MASKPRE:PRESAMPBITS Sets or returns the number of bits before the (isolated one) pulse leading edge in serial trigger
+MASK:MASKPRE:RECOrdlength Sets or returns the nominal record length for pulse mask testing
+MASK:MASKPRE:SERIALTRIG Sets or returns enabling of serial trigger for the current mask standard
+MASK:MASKPRE:TRIGTOSAMP Sets or returns the time, in seconds, from the (leading edge) trigger position to the pulse bit sampling position
+MASK:MASKPRE:VOFFSet Sets or returns the nominal vertical offset, in volts, used to vertically offset the input channels
+MASK:MASKPRE:VPOS Sets or returns the nominal vertical position, in divisions, used to vertically position the input channels
+MASK:MASKPRE:VSCAle Sets or returns the nominal vertical scale, in volts per division, used to vertically scale the input channels
+MASK:MASKPRE:WIDth Sets or returns the nominal bit width in seconds
+MASK:POLarity Sets or returns the input waveform polarity pass/fail testing mode
+MASK:STANdard Sets or returns the currently-displayed mask
+MASK:STOPOnviolation Sets or returns the stop on violation mode
+MASK:TESt:BEEP:COMPLetion Sets or returns the beep on pass/fail test completion mode
+MASK:TESt:BEEP:FAILUre Sets or returns the beep on pass/fail test failure mode
+MASK:TESt:DELay Sets or returns the amount of time to wait after starting pass/fail testing to evaluate waveforms
+MASK:TESt:HARDCopy Sets or returns the hard copy on pass/fail test failure mode
+MASK:TESt:REPeat Sets or returns the repeat pass/fail test on completion mode
+MASK:TESt:SAVEWFM Sets or returns the save waveform to file on failure mode
+MASK:TESt:STATE Sets or returns the state of mask pass/fail testing
+MASK:TESt:STATUS? Returns the mask test pass/fail status
+MASK:TESt:THReshold Sets or returns the maximum number of tested waveforms that are allowed to fail during each pass/fail test
+MASK:TESt:WAVEform Sets or returns the number of waveforms to test during pass/fail testing
+MASK:USER:MASK<m> DELEte Deletes the specified mask segment from the User mask
+MASK:USER:MASK<m>:NR_Pt? Returns the number of points that make up the specified mask segment in the User mask
+MASK:USER:MASK<m>:POINTS Sets or returns the X-Y user coordinates of all points in the specified User mask segment
+MASK:USER:MASK<m>:POINTSNorm Sets or returns the normalized coordinate points of the specified User mask segment
+MASK:USER:MASK<m>:POINTSPcnt Sets or returns the points in the specified User mask segment, in percentage coordinates
+MASK:USER:MASKPRE:AMPlitude Sets or returns the User mask’s nominal pulse amplitude in volts
+MASK:USER:MASKPRE:HSCAle Sets or returns the nominal timing resolution used to draw the User mask, in time/division
+MASK:USER:MASKPRE:HTRIGPOS Sets or returns the nominal trigger position (pulse leading edge), as a fraction of the display width, used to draw the User mask
+MASK:USER:MASKPRE:PATTERNBITS Sets or returns the number of bits used for serial trigger for the User mask standard
+MASK:USER:MASKPRE:PRESAMPBITS Sets or returns the number of bits before the (isolated one) pulse leading edge in User mask
+MASK:USER:MASKPRE:RECOrdlength Sets or returns the nominal record length for User mask
+MASK:USER:MASKPRE:SERIALTRIG Sets or returns enabling of serial trigger for the User mask standard
+MASK:USER:MASKPRE:TRIGTOSAMP Sets or returns the time, in seconds, from the (leading edge) trigger position to the pulse bit sampling position, for the User Mask
+MASK:USER:MASKPRE:VOFFSet Sets or returns the nominal vertical offset, in volts, used to vertically offset the input channels
+MASK:USER:MASKPRE:VPOS Sets or returns the nominal vertical position, in divisions, used to vertically position the input channels
+MASK:USER:MASKPRE:VSCAle Sets or returns the nominal vertical scale, in volts per division, used to vertically scale the input channels
+MASK:USER:MASKPRE:WIDTH Sets or returns the User mask standard’s nominal bit width in seconds
+TRIGger:A:COMMunication:STANdard Sets or returns the current standard A trigger communication trigger settings
+TRIGger:MAIn:COMMunication:STANdard Sets or returns the current standard main trigger communication trigger settings
+</MaskCommands>
+
+CLOCKCoax Clock interface coaxial pair 2.048 Mb/s
+CLOCKSymmetrical Clock interface symmetric pair 2.048 Mb/s
+DS0Contra DS-0 data contra-directional 64 kb/s
+DS0Double DS-0 double 64 kb/s
+DS0Single DS-0 single 64 kb/s
+DS0Timing DS-0 timing 64 kb/s
+DS1Rate Old DS1 rate 1.544 Mb/s
+G703DS1 G.703 DS1 1.544 Mb/s
+DS2RATECoax DS2 rate coaxial pair 6.312 Mb/s
+DS2RATESymmetrical DS2 rate symmetric pair 6.312 Mb/s
+DS3Rate Old DS3 rate 44.736 Mb/s
+G703DS3 G.703 DS3 44.736 Mb/s
+E1Coax E1 coaxial pair 2.048 Mb/s
+E1Symmetrical E1 symmetrical pair 2.048 Mb/s
+E2 E2 8.448 Mb/s
+E3 E3 34.368 Mb/s
+NONe Turns off mask testing and erases current mask from the screen
+RATE32Mbit 32.068 Mb/s
+
+DS1 DS1 rate 1.544 Mb/s
+DS1A DS1A 2.048 Mb/s
+DS1C DS1C 3.152 Mb/s
+DS2 DS2 6.312 Mb/s
+DS3 DS3 44.736 Mb/s
+STS1Pulse STS-1 pulse 51.84 Mb/s
+NONe Turns off mask testing and erases current mask from the screen
+
+<MathCommands>
+MATH? Returns definition for the math waveform
+MATH:DEFINE Sets or returns the math waveform definition for the active math operation (as set by MATH:TYPe)
+MATH:HORizontal:POSition<NR3> Sets the math horizontal display position for FFT and dual waveform math with reference sources only
+MATH:HORizontal:SCAle<NR3> Sets the math horizontal display scale for FFT and dual waveform math with reference sources only
+MATH:HORizontal:UNIts Sets or returns the math horizontal measurement units label
+MATH:SPECTral:MAG Sets or returns the FFT waveform vertical scale type (linear or dB)
+MATH:SPECTral:WINdow Sets or returns the FFT window value
+MATH:TYPe Sets or returns the math function (Dual, FFT, DPO, or Advanced)
+MATH:VAR<x> (TDS3AAM) Sets or returns the value of the user-defined variable VAR1 or VAR2
+MATH:VERTical:POSition<NR3> Sets the math waveform display position
+MATH:VERTical:SCAle<NR3> Sets the vertical display scale
+MATH:VERTical:UNIts Sets or returns the math vertical measurement units label
+-- Same as the equivalent MATH commands
+MATH1:DEFINE
+MATH1:HORizontal:POSition<NR3>
+MATH1:HORizontal:SCAle
+MATH1:HORizontal:UNIts
+MATH1:SPECTral:MAG
+MATH1:SPECTral:WINdow
+MATH1:TYPe
+MATH1:VAR<x>
+MATH1:VERTical:POSition<NR3>
+MATH1:VERTical:SCAle<NR3>
+MATH1:VERTical:UNIts
+</MathCommands>
+
+<MeasurementCommands>
+MEASUrement? Returns all measurement parameters
+MEASUrement:CLEARSNapshot Clears the measurement snapshot screen
+MEASUrement:GATing Sets or returns measurement gating
+MEASUrement:IMMed? Returns immediate measurement parameters
+MEASUrement:IMMed:DATa? Returns measurement result and qualifier
+MEASUrement:IMMed:DELay? Returns information about the immediate delay measurement
+MEASUrement:IMMed:DELay:DIREction Sets the starting point and directions of immediate delay measurement
+MEASUrement:IMMed:DELay:EDGE1 Sets or returns the slope of the first edge used for the delay waveform measurement
+MEASUrement:IMMed:DELay:EDGE2 Sets or returns the slope of the second edge used for the delay waveform measurement
+MEASUrement:IMMed:SOUrce Channel to take measurement from
+MEASUrement:IMMed:SOURCE<x> Sets the source (1 or 2) to be measured
+MEASUrement:IMMed:TYPe The measurement to be taken
+MEASUrement:IMMed:UNIts? Returns measurement units
+MEASUrement:IMMed:VALue? Returns measurement result
+MEASUrement:INDICators? Returns all measurement indicator parameters
+MEASUrement:INDICators:HORZ<x>? Returns the position of the specified horizontal measurement indicator
+MEASUrement:INDICators:STATE Sets and returns state of visible measurement indicators
+MEASUrement:INDICators:NUMHORZ? Returns the horizontal measurement indicators
+MEASUrement:INDICators:NUMVERT? Returns the vertical measurement indicators
+MEASUrement:INDICators:VERT<x>? Returns the position of the specified vertical measurement indicator
+MEASUrement:MEAS<x>? Returns parameters on measurement
+MEASUrement:MEAS<x>COUNt? (TDS3AAM) Returns parameters on measurement accumulated
+MEASUrement:MEAS<x>:DATa? Returns measurement result and qualifier
+MEASUrement:MEAS<x>:DELay? Returns delay measurement result and qualifier
+MEASUrement:MEAS<x>:DELay: DIREction Sets the starting point and direction to determine the delay measurement
+MEASUrement:MEAS<x>:DELay: EDGE<x> Sets the slope of the edge used for delay measurement
+MEASUrement:MEAS<x>:MAXimum? (TDS3AAM) Returns the maximum value for the specified measurement since last statistical reset
+MEASUrement:MEAS<x>:MEAN? (TDS3AAM) Returns the mean value accumulated for the specified measurement since last statistical reset
+MEASUrement:MEAS<x>:MINImum? (TDS3AAM) Returns the minimum value accumulated for the specified measurement since the last statistical reset
+MEASUrement:MEAS<x>:SOURCE Returns or sets measurement source
+MEASUrement:MEAS<x>:SOURCE<x> Returns or sets the source for the specified measurement
+MEASUrement:MEAS<x>:STDev? (TDS3AAM) Returns or sets standard deviation values accumulated for the specified measurement since the last statistical reset
+MEASUrement:MEAS<x>:STATE Turns measurement display on or off
+MEASUrement:MEAS<x>:TYPe The measurement to be taken
+MEASUrement:MEAS<x>:UNIts? Returns units to use for measurement
+MEASUrement:MEAS<x>:VALue? Returns measurement result
+MEASUrement:METHod Method for calculating reference levels
+MEASUrement:REFLevel? Returns reference levels
+MEASUrement:REFLevel:ABSolute:HIGH Sets or returns the high reference level
+MEASUrement:REFLevel:ABSolute:LOW Sets or returns the low reference level
+MEASUrement:REFLevel:ABSolute:MID Sets or returns the mid reference level
+MEASUrement:REFLevel:ABSolute:MID2 Sets or returns the mid2 reference level
+MEASUrement:REFLevel:METHod Specifies reference level used for calculation
+MEASUrement:REFLevel:PERCent:HIGH Sets or returns the percent of the high reference level
+MEASUrement:REFLevel:PERCent:LOW Sets or returns the percent of the low reference level
+MEASUrement:REFLevel:PERCent:MID Sets or returns percent of the mid reference level
+MEASUrement:REFLevel:PERcent:MID2 Sets or returns percent of the mid2 reference level
+MEASUrement:SNAPShot Displays measurement snapshot
+MEASUrement:STATIstics:MODE (TDS3AAM) Sets operation and display measurement
+MEASUrement:STATIstics:WEIghting (TDS3AAM) Sets responsiveness of the mean and standard waveform changes
+</MeasurementCommands>
+
+<MiscCommands>
+BELl Audio alert
+DATE Sets date
+*DDT Define group execute trigger (GET)
+FACtory Similar to *RST
+HDR Same as HEADer
+HEADer Returns command header with query
+LANGuage Selects language
+LOCk Locks front panel (local lockout)
+*LRN? Returns instrument settings
+NEWpass Changes password for User Protected Data
+PASSWord Access to change User Protected Data
+POWER:AC:PRESENt? Returns a 1 the instrument is powered by AC
+POWER:BACKLight Sets or returns idle time that must lapse before the backlight turns off
+POWER:BATTery:PRESENt? Returns a 1 if a battery is installed
+POWER:BATTery:GASgauge? Returns remaining charge that is left in the battery. 0 = empty to 15 = full
+POWER:SHUTdown Sets or returns idle time that must lapse before the instrument is powered off
+REM No action; remark only
+*RST Returns most settings to factory default
+SET? Same as *LRN?
+TEKSecure Initialize waveforms and setups
+TIMe Sets Time
+*TRG Perform Group Execute Trigger (GET)
+*TST? Self-test
+UNLock Unlock front panel (local lockout)
+VERBose Returns full command name or minimum spellings with query
+</MiscCommands>
+
+<RS232Commands>
+RS232? Returns RS-232 parameters
+RS232:BAUd Sets baud rate
+RS232:HARDFlagging Sets hard flagging
+RS232:PRESET Sets RS232 parameters to default values
+RS232:TRANsmit:TERMinator Sets end-of-line terminator
+</RS232Commands>
+
+<SaveAndRecallCommands>
+RECALL:MASK (TDS3TMT) Loads the specified mask file from the disk or flash drive to the User mask
+RECAll:SETUp Recalls saved instrument settings
+RECAll:WAVEform Recalls saved waveform
+*RCL Recalls settings
+*SAV Saves settings
+SAVE:MASK (TDS3TMT) Saves the User mask to a specified file on the disk or flash drive
+SAVe:SETUp Saves instrument settings
+SAVe:WAVEform Saves waveform
+SAVe:WAVEform:FILEFormat Sets or returns file format for saved waveforms
+</SaveAndRecallCommands>
+
+<StatusAndErrorCommands>
+ALLEv? Returns all events
+BUSY? Returns scope status
+*CLS Clears status
+DESE Device event status enable
+*ESE Event status enable
+*ESR? Returns standard event status register
+EVENT? Returns event code
+EVMsg? Returns event code and message
+EVQty? Returns number of events in queue
+ID? Identification
+*IDN? Returns IEEE-488 instrument identification
+*OPC Operation complete
+*PSC Power-on status clear
+*PUD Queries or sets User Protected Data
+*SRE Service request enable
+*STB? Reads status byte
+*WAI Wait to continue
+</StatusAndErrorCommands>
+
+<TriggerCommands>
+TRIGger? Returns parameters
+TRIGger:A Returns the A trigger parameters
+TRIGger:A:COMMunication:SOUrce (TDS3TMT) Sets or returns the signal source on which to trigger
+TRIGger:A:COMMunication:STANdard (TDS3TMT) Sets or returns the communication standard on which to trigger
+TRIGger:A:EDGe? Returns edge trigger parameters
+TRIGger:A:EDGe:COUPling Trigger coupling
+TRIGger:A:EDGe:SLOpe Trigger slope
+TRIGger:A:EDGe:SOUrce Trigger source
+TRIGger:A:HOLdoff? Returns trigger holdoff
+TRIGger:A:HOLdoff:TIMe Trigger holdoff
+TRIGger:A:HOLdoff:VALue Trigger holdoff
+TRIGger:A:LEVel Trigger level
+TRIGger:A:LOGIc? Returns the logic trigger settings
+TRIGger:A:LOGIc:CLAss Sets or returns the logic trigger class value (pattern or state)
+TRIGger:A:LOGIc:INPUT<x>: LOGICLevel Sets or returns the signal logic level setting of the specified input
+TRIGger:A:LOGIc:INPUT<x>: SLOpe Sets or returns the signal slope setting of the specified input
+TRIGger:A:LOGIc:INPUT<x>: SOUrce Sets or returns the signal source for the specified logic trigger input
+TRIGger:A:LOGIc:INPUT<x>: THReshold Sets or returns the logic trigger threshold setting of the specified input
+TRIGger:A:LOGIc:PATtern: DELTATime Sets or returns the pattern trigger time period value
+TRIGger:A:LOGIc:PATtern: FUNCtion Sets or returns the logic function to apply to the pattern trigger inputs
+TRIGger:A:LOGIc:PATtern: WHEn Sets or returns the pattern logic condition on which to trigger the oscilloscope
+TRIGger:A:LOGIc:STATE:WHEn Sets or returns the state condition on which to trigger the oscilloscope
+TRIGger:A:MODe Trigger mode
+TRIGger:A:PULse? Returns the pulse trigger (width, runt, and slew rate) settings
+TRIGger:A:PULse:CLAss Sets or returns the pulse trigger class value (width, runt, or slew rate)
+TRIGger:A:PULse:RUNT? Returns the runt pulse trigger parameters
+TRIGger:A:PULse:RUNT: POLarity Sets or returns the runt pulse polarity value on which to trigger the oscilloscope
+TRIGger:A:PULse:RUNT:THReshold? (TDS3TRG) Returns the runt pulse trigger upper and lower threshold voltage values
+TRIGger:A:PULse:RUNT: THReshold:BOTh Sets both runt pulse trigger threshold voltage values
+TRIGger:A:PULse:RUNT: THReshold:HIGH Sets or returns the runt pulse trigger high threshold voltage value
+TRIGger:A:PULse:RUNT: THReshold:LOW Sets or returns the runt pulse trigger low threshold voltage value
+TRIGger:A:PULse:RUNT:WHEn Sets or returns the runt pulse width condition on which to trigger the oscilloscope
+TRIGger:A:PULse:RUNT: WIDth Sets or returns the runt pulse width time period value
+TRIGger:A:PULse:SLEWRate? Returns the slew rate trigger settings
+TRIGger:A:PULse:SLEWRate: DELTATime Sets or returns the time component of the slew rate value
+TRIGger:A:PULse:SLEWRate: POLarity Sets or returns the slew rate slope polarity on which to trigger the oscilloscope
+TRIGger:A:PULse:SLEWRate: SLEWrate Sets or returns the slew rate on which to trigger the oscilloscope
+TRIGger:A:PULse:SLEWRate: THReshold:BOTH Sets both slew rate threshold voltage values
+TRIGger:A:PULse:SLEWRate: THReshold:HIGH Sets or returns the slew rate high threshold voltage value
+TRIGger:A:PULse:SLEWRate: THReshold:LOW Sets or returns the slew rate low threshold voltage value
+TRIGger:A:PULse:SLEWRate: WHEn Sets or returns the slew rate condition on which to trigger the oscilloscope
+TRIGger:A:PULse:SOUrce Sets or returns the signal source for width, runt, and slew rate triggers
+TRIGger:A:PULse:WIDth:POLarity Sets or returns the pulse width polarity value on which to trigger the oscilloscope
+TRIGger:A:PULse:WIDth:WHEn Sets or returns the pulse width condition on which to trigger the oscilloscope
+TRIGger:A:PULse:WIDth:WIDth Sets or returns the pulse width trigger time period value
+TRIGger:A:SETLevel Sets the trigger level to 50%
+TRIGger:A:TYPe Sets A trigger to edge, logic, pulse, or, video type
+TRIGger:A:VIDeo? Returns video trigger parameters
+TRIGger:A:VIDeo:CUSTom:FORMat (TDS3SDI, TDS3VID) Sets or queries the custom video signal source format
+TRIGger:A:VIDeo:CUSTom:SCAN (TDS3SDI, TDS3VID) Sets or queries the custom video signal source scan rate on which to trigger
+TRIGger:A:VIDeo:FIELD Sets or queries the field the video trigger detects
+TRIGger:A:VIDeo:HDTV:FORMat (TDS3SDI, TDS3VID) Sets or queries the HDTV signal format on which to trigger
+TRIGger:A:VIDeo:HOLdoff:FIELD (TDS3SDI, TDS3VID) Sets or queries the number of video fields to hold off before triggering
+TRIGger:A:VIDeo:LINE Sets or queries the video line number on which to trigger
+TRIGger:A:VIDeo:SCAN (TDS3SDI, TDS3VID) Sets or queries the video signal source scan rate on which to trigger
+TRIGger:A:VIDeo:SOUrce Selects video trigger source
+TRIGger:A:VIDeo:STANdard Selects video trigger standard
+TRIGger:A:VIDeo:SYStem Same as TRIGger:A:VIDeo:SOUrce
+TRIGger:B? Returns the B trigger level
+TRIGger:B:BY Sets the B trigger to delay by time or events
+TRIGger:B:EDGe? Returns the trigger coupling, source, and the slope of the B trigger
+TRIGger:B:EDGe:COUPling Sets the B trigger coupling
+TRIGger:B:EDGe:SLOpe B trigger slope
+TRIGger:B:EDGe:SOUrce B trigger source
+TRIGger:B:EVENTS? Returns the current delayed trigger event parameters
+TRIGger:B:EVENTS:COUNt Delay by events count for the B trigger
+TRIGger:B:LEVel B trigger level
+TRIGger:B:SETLevel Sets the trigger level to 50%
+TRIGger:B:STATE Enables/disables the B trigger
+TRIGger:B:TIMe Minimum time between A and B trigger
+TRIGger:B:TYPe Sets B trigger to edge, logic, pulse, or, video type
+-- Same as the equivalent B trigger commands; for compatibility with earlier oscilloscopes
+TRIGger:DELay:EDGe:COUPling
+TRIGger:DELay:EDGe:SLOpe
+TRIGger:DELay:EDGe:SOUrce
+TRIGger:DELay:EVENTS:COUNt
+TRIGger:DELay:LEVel
+TRIGger:DELay:SETLevel
+TRIGger:DELay:STATE
+TRIGger:DELay:TIMe
+TRIGger:DELay:TYPe
+--
+TRIGger:EXTERnal:PRObe (4-channel TDS3000B and TDS3000C Series oscilloscopes only) Sets or returns the external input probe factor
+TRIGger:EXTERnal:YUNit (4-channel TDS3000B and TDS3000C Series oscilloscopes only) Sets or returns the external input vertical units
+TRIGger:FORCe Forces a trigger event
+TRIGger:STATE? Returns trigger system status
+</TriggerCommands>
+
+<VerticalCommands>
+CH<x>? Returns vertical parameters for channel <x>
+CH<x>:BANdwidth Sets or returns the bandwidth for channel <x>
+CH<x>:COUPling Sets or returns the channel coupling for channel <x>
+CH<x>:DESKew Sets or returns the channel deskew time for channel <x>
+CH<x>:ID? Return probe identification for channel <x>
+CH<x>:IMPedance Sets or returns the channel probe impedance for channel <x>
+CH<x>:INVert Sets or returns the channel invert for channel <x>
+CH<x>:OFFSet Sets or returns the channel offset for channel <x>
+CH<x>:POSition Sets or returns the channel position for channel <x>
+CH<x>:PROBe Sets or returns the channel probe attenuation for channel <x>
+CH<x>:SCAle Sets or returns the channel volts or amps per div for channel <x>
+CH<x>:VOLts Same as CH<x>:SCAle for channel <x>
+CH<x>:YUNIT Sets or returns the channel vertical units for channel <x>
+SELect? Return selected waveform and state of channels (on/off)
+SELect:CONTROl Set selected waveform
+SELect:<wfm> Turns channels on or off
+</VerticalCommands>
+
+<WaveformCommands>
+CURVe Transfers waveform data to or from the oscilloscope
+DATa Sets or returns the format and location of the waveform data that is transferred with the CURVe command
+DATa:DESTination Sets or returns the destination for waveforms sent to oscilloscope
+DATa:ENCdg Sets or returns the waveform data encoding method
+DATa:SOUrce Sets or returns the source of CURVe? data
+DATa:STARt Sets or returns the starting point in waveform transfer
+DATa:STOP Sets or returns the ending point in waveform transfer
+DATa:TARget Same as DATa:DESTination
+DATa:WIDth Sets or returns the byte width of waveform points
+REF<x>:DATE? Query waveform save date
+REF<x>:HORizontal:POSition<NR3> Sets or returns the horizontal waveform zoom position
+REF<x>:HORizontal:SCAle<NR3> Sets or returns the horizontal waveform zoom scale
+REF<x>:LABel (TDS3AAM) Sets or returns the user-defined reference waveform label
+REF<x>:TIMe? Query waveform save time
+REF<x>:VERTical:POSition<NR3> Sets or returns the vertical waveform position
+REF<x>:VERTical:SCAle<NR3> Sets or returns the vertical waveform scale
+WAVFrm? Query waveform preamble and data
+WFMPre? Query waveform preamble
+WFMPre:BIT_Nr Sets or returns the preamble bit width of waveform points
+WFMPre:BN_Fmt Sets or returns the preamble binary encoding type
+WFMPre:BYT_Nr Sets or returns the preamble byte width of waveform points
+WFMPre:BYT_Or Sets or returns the preamble byte order of waveform points
+WFMPre:ENCdg Sets or returns the preamble encoding method
+WFMPre:NR_Pt Sets or returns the the number of points in the curve transfer to/from the oscilloscope
+WFMPre:PT_Fmt Sets or returns the format of curve points
+WFMPre:PT_Off? Query trigger offset
+WFMPre:WFId? Query curve identifier
+WFMPre:XINcr Sets or returns the horizontal sampling interval
+WFMPre:XUNit Sets or returns the horizontal units
+WFMPre:XZEro Sets or returns the time of first point in waveform
+WFMPre:YMUlt Sets or returns the vertical scale factor
+WFMPre:YOFf Sets or returns the vertical position
+WFMPre:YUNit Sets or returns the vertical units
+WFMPre:YZEro Sets or returns the offset voltage
+WFMPre:<wfm>? Query waveform preamble
+WFMPre:<wfm>:NR_Pt Set the record length of the destination reference waveform. Query the number of points in the curve transfer from the oscilloscope.
+WFMPre:<wfm>:PT_Fmt Sets or returns the format of curve points
+WFMPre:<wfm>:PT_Off? Query trigger offset
+WFMPre:<wfm>:WFId? Query curve identifier
+WFMPre:<wfm>:XINcr Sets or returns the horizontal sampling interval
+WFMPre:<wfm>:XUNit Sets or returns the horizontal units
+WFMPre:<wfm>:XZEro Sets or returns the time of first points in a waveform
+WFMPre:<wfm>:YMUlt Sets or returns the vertical scale factor
+WFMPre:<wfm>:YOFf Sets or returns the vertical position
+WFMPre:<wfm>:YUNit Sets or returns the vertical units
+WFMPre:<wfm>:YZEro Sets or returns the offset voltage
+</WaveformCommands>
