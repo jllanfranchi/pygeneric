@@ -1,55 +1,121 @@
+from __future__ import division
+
 import numpy as np
 from pylab import *
+import matplotlib as mpl
+from matplotlib import pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, LogNorm, PowerNorm
+
+from smartFormat import numFmt, numFmt2
 
 '''
 Use the following as:
 #mpl.rc('axes', color_cycle=colorCycleOrthog)
+source: http://stackoverflow.com/questions/470690/how-to-automatically-generate-n-distinct-colors
+... but modified somewhat from that!
 '''
 colorCycleOrthog = [
-    '#000000', #Black
-    '#FFB300', #Vivid Yellow
-    '#803E75', #Strong Purple
-    '#FF6800', #Vivid Orange
-    '#A6BDD7', #Very Light Blue
-    '#C10020', #Vivid Red
-    '#CEA262', #Grayish Yellow
-    '#817066', #Medium Gray
+    '#000000', #  0  Black
+    '#FFB300', #  1  Vivid Yellow
+    '#803E75', #  2  Strong Purple
+    '#FF6800', #  3  Vivid Orange
+    '#8A9DD7', #  4  Very Light Blue
+    '#C10020', #  5  Vivid Red
+    '#CEA262', #  6  Grayish Yellow
+    '#817066', #  7  Medium Gray
 
     #The following will not be good for people with defective color vision
-    '#007D34', #Vivid Green
-    '#F6768E', #Strong Purplish Pink
-    '#00538A', #Strong Blue
-    '#53377A', #Strong Violet
-    '#FF8E00', #Vivid Orange Yellow
-    '#B32851', #Strong Purplish Red
-    '#F4C800', #Vivid Greenish Yellow
-    '#7F180D', #Strong Reddish Brown
-    '#93AA00', #Vivid Yellowish Green
-    '#593315', #Deep Yellowish Brown
-    '#F13A13', #Vivid Reddish Orange
-    '#FF7A5C', #Strong Yellowish Pink
+    '#007D34', #  8  Vivid Green
+    '#F6768E', #  9  Strong Purplish Pink
+    '#00538A', # 10  Strong Blue
+    '#93AA00', # 11  Vivid Yellowish Green
+    '#593315', # 12  Deep Yellowish Brown
+    '#F14AD3', # 13  PINK/Magenta!  (used to be: #F13A13, Vivid Reddish Orange
+    '#53377A', # 14  Strong Violet
+    '#FF8E00', # 15  Vivid Orange Yellow
+    '#54BF00', # 16  Vivid Greenish Yellow
+    '#0000A5', # 17  BLUE!
+    '#7F180D', # 18  Strong Reddish Brown
+
+    #'#F13A13', # 13  Vivid Reddish Orange
+    #'#B32851', # 16  Strong Purplish Red
+    #'#FF7A5C', # 19  Strong Yellowish Pink
 ]
 
 colorCycleRainbow = [
-    '#8000FF',
-    '#4E4DFC',
-    '#1C93F3',
-    '#17CBE4',
-    '#48F1D0',
-    '#7AFFB7',
-    '#ACF59A',
-    '#DED579',
-    '#FFA055',
+    '#FF1008',
     '#FF5C2F',
-    '#FF1008']
+    '#FFA055',
+    '#DED579',
+    '#ACF59A',
+    '#7AFFB7',
+    '#48F1D0',
+    '#17CBE4',
+    '#1C93F3',
+    '#4E4DFC',
+    '#8000FF',
+]
+
+human_safe = ListedColormap(colorCycleOrthog, name='human_safe')
+my_rainbow = ListedColormap(colorCycleRainbow, name='my_rainbow')
+
+def grayify_cmap(cmap):
+    """Return a grayscale version of the colormap
+    From: https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/"""
+    cmap = plt.cm.get_cmap(cmap)
+    colors = cmap(np.arange(cmap.N))
+    
+    # convert RGBA to perceived greyscale luminance
+    # cf. http://alienryderflex.com/hsp.html
+    RGB_weight = [0.299, 0.587, 0.114]
+    luminance = np.sqrt(np.dot(colors[:, :3] ** 2, RGB_weight))
+    colors[:, :3] = luminance[:, np.newaxis]
+   
+    if isinstance(cmap, LinearSegmentedColormap): 
+        return cmap.from_list(cmap.name + "_grayscale", colors, cmap.N)
+    elif isinstance(cmap, ListedColormap): 
+        return ListedColormap(colors=colors, name=cmap.name + "_grayscale")
 
 
+def show_colormap(cmap):
+    """From: https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/"""
+    im = np.outer(np.ones(100), np.arange(1000))
+    fig, ax = plt.subplots(2, figsize=(6, 1.5),
+                           subplot_kw=dict(xticks=[], yticks=[]))
+    fig.subplots_adjust(hspace=0.1)
+    ax[0].imshow(im, cmap=cmap)
+    ax[1].imshow(im, cmap=grayify_cmap(cmap))
 
-def generateColorCycle(cmap, nColors):
-    stepSize = int(np.floor(cmap.N/nColors))
-    colorCycle = [ "#%0.2X%0.2X%0.2X" % tuple(np.round(c[0:3]*255))
-         for c in cmap(range(0,nColors*stepSize+1,stepSize)) ]
-    return colorCycle
+
+def plotColorCycle(color_cycle=colorCycleOrthog):
+    N = len(color_cycle)
+    x = np.linspace(0,2*np.pi,100)
+    f = plt.figure(333)
+    clf()
+    ax = f.add_subplot(111)
+    [ax.plot(x,np.cos(x-2*pi/N*n), lw=3, label=format(n,'2d')+': '+color_cycle[n][1:],color=color_cycle[n]) for n in range(N)]
+    plt.legend(loc='center right')
+    ax.set_xlim([0, 8.2])
+    ax.set_ylim([-1.1, 1.1])
+    plt.tight_layout()
+
+
+def plotDefaults():
+    plt.ion()
+    mpl.rc('font', **{'family':'serif', 'weight':'normal', 'size': 8})
+    mpl.rc('axes', color_cycle=human_safe.colors)
+    #generateColorCycle(n_colors=6)
+
+def generateColorCycle(cmap=mpl.cm.brg, n_colors=8, set_it=True):
+    cmap_indices = np.array(
+        np.round(np.arange(0,n_colors)*(cmap.N-1)/(n_colors-1)),
+        dtype=int)
+    step_size = int(np.floor(cmap.N/n_colors))
+    color_cycle = [ "#%0.2X%0.2X%0.2X" % tuple(np.round(c[0:3]*255))
+         for c in cmap(cmap_indices) ]
+    if set_it:
+        mpl.rc('axes', color_cycle=color_cycle)
+    return color_cycle
 
 def peakInfo(xdata, ydata):
     maxvalind = np.argmax(ydata)
@@ -183,7 +249,7 @@ def onpick_peakfind(event):
         text((lowerHalfPowerFreq+upperHalfPowerFreq)/2, halfPower,
                  "FWHM = " + lowPrec(delta_f) + ", Q = " + lowPrec(Q) + r", $\eta$ = " + lowPrec(1/Q),
                  horizontalalignment='center', verticalalignment='center', fontsize=12 )
-        draw()
+        plt.draw()
     except:
         pass
     #    raise()
@@ -212,8 +278,10 @@ def onpickLegend_toggle(event):
 def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
                 title=None, xlabel=None,
                 magPlot=True, phasePlot=True, realPlot=True, imagPlot=True,
+                squareMag=True,
                 magScale='log', phaseScale='deg', realScale='linear',
-                imagScale='linear', freqScale='log', fignum=301):
+                imagScale='linear', freqScale='log', unwrapPhase=False,
+                fignum=301):
 
     nPlots = magPlot + phasePlot + realPlot + imagPlot
 
@@ -238,11 +306,17 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
     xticklabels = []
     magSq = (np.abs(data))**2
     if magPlot:
+        if squareMag:
+            M = magSq
+            ylab = r"Mag$^2$"
+        else:
+            M = np.sqrt(magSq)
+            ylab = r"Mag"
         plotN += 1
         kwargs = plot_kwargs.pop(0)
         ax = fig.add_subplot(nPlots, 1, plotN)
-        ax.plot(f, magSq, label=label, **kwargs)
-        ax.set_ylabel("Mag squared")
+        ax.plot(f, M, label=label, **kwargs)
+        ax.set_ylabel(ylab)
         ax.grid(b=True)
         ax.set_yscale(magScale)
         axesList.append(ax)
@@ -263,6 +337,8 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
             sharex = axesList[0]
         kwargs = plot_kwargs.pop(0)
         phi = np.arctan2(np.imag(data), np.real(data))
+        if unwrapPhase:
+            phi = np.unwrap(phi) #, np.pi*(1-1/10))
         if phaseScale == 'deg':
             phaseUnits = r"deg"
             phi = phi*180/np.pi
@@ -335,3 +411,150 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
     #fig.tight_layout()
 
     return fig, axesList
+
+
+def plotMatrix(tuplesDict, labelsList):
+    """From: 
+    http://fromthepantothefire.com/matplotlib/rock_paper_scissors.py"""
+    # list of string labels for rows/columns and
+    # data in dictionary of tuples of these labels (row_label,col_label)
+    
+    # Map text labels to index used on plot
+    # this is convenient if you want to reorganize the display order
+    # just update the labelsList order.
+    labelNameToIndex = {}
+    for i,lab in enumerate(labelsList):
+        labelNameToIndex[lab] = i
+
+    # number of rows and columns
+    numLabels = len(labelsList)
+
+    #create a list of data points
+    xyz = []
+    for t in tuplesDict:
+        x = labelNameToIndex[t[1]]
+        # y values are reversed so output oriented the way I
+        # think about matrices (0,0) in upper left.
+        y = numLabels -1 - labelNameToIndex[t[0]]
+        
+        # extract value and color
+        (z,c) = tuplesDict[t]
+
+        xyz.append( (x,y,z,c))
+
+    for x,y,z,c in xyz:
+        plt.scatter([x],[y], s= [z], color = c, alpha = 0.8)
+
+    tickLocations = range(numLabels)
+    plt.xticks(tickLocations, labelsList, rotation = 90)
+    # reverse the labels for y axis to match the data
+    plt.yticks(tickLocations, labelsList[::-1]) 
+    # set the axis 1 beyond the data so it looks good.
+    plt.axis([-1, numLabels, -1, numLabels])
+
+
+def removeBorder(axes=None, top=False, right=False, left=True, bottom=True):
+    """
+    Minimize chartjunk by stripping out unnecessary plot borders and axis ticks
+    
+    The top/right/left/bottom keywords toggle whether the corresponding plot border is drawn
+
+    from ChrisBeaumont,
+        https://github.com/cs109/content/blob/master/README.md
+    """
+    ax = axes or plt.gca()
+    ax.spines['top'].set_visible(top)
+    ax.spines['right'].set_visible(right)
+    ax.spines['left'].set_visible(left)
+    ax.spines['bottom'].set_visible(bottom)
+    
+    #turn off all ticks
+    ax.yaxis.set_ticks_position('none')
+    ax.xaxis.set_ticks_position('none')
+    
+    #now re-enable visibles
+    if top:
+        ax.xaxis.tick_top()
+    if bottom:
+        ax.xaxis.tick_bottom()
+    if left:
+        ax.yaxis.tick_left()
+    if right:
+        ax.yaxis.tick_right()
+
+
+def findRenderer(fig):
+    '''From http://stackoverflow.com/questions/22667224/matplotlib-get-text-bounding-box-independent-of-backend'''
+    if hasattr(fig.canvas, "get_renderer"):
+        #Some backends, such as TkAgg, have the get_renderer method, which 
+        #makes this easy.
+        renderer = fig.canvas.get_renderer()
+    else:
+        #Other backends do not have the get_renderer method, so we have a work 
+        #around to find the renderer.  Print the figure to a temporary file 
+        #object, and then grab the renderer that was used.
+        #(I stole this trick from the matplotlib backend_bases.py 
+        #print_figure() method.)
+        import io
+        fig.canvas.print_pdf(io.BytesIO())
+        renderer = fig._cachedRenderer
+    return(renderer)
+
+
+class ScaledMaxNLocator(mpl.ticker.MaxNLocator):
+    def __init__(self, scale, *args, **kwargs):
+        super(ScaledMaxNLocator, self).__init__(**kwargs)
+        self.scale = scale
+
+    def __call__(self):
+        vmin, vmax = self.axis.get_view_interval()
+        #print self.scale, vmin, vmax, [float(tl)/float(self.scale) for tl in self.tick_values(vmin*self.scale, vmax*self.scale)]
+        return [float(tl)/float(self.scale) for tl in self.tick_values(vmin*self.scale, vmax*self.scale)]
+
+def maskZeros(H):
+    return H == 0
+
+def hist2d(x, y, bins=10, range=None, normed=False, weights=None, maskFun=None,
+           ax=None, fig=None, tight_layout=True, log_normed=False,
+           bgcolor=(0.4,)*3, cmap=mpl.cm.afmhot,
+           colorbar_kwargs=None, #{'orientation':'vertical'}, #, 'ticks':2.0**np.arange(-10,10)},
+           colorbar_label=None,
+           title=None, xlabel=None, ylabel=None, grid=True):
+    H, xedges, yedges = np.histogram2d(x=x, y=y, bins=bins, range=range, normed=normed, weights=weights)
+    if maskFun is None:
+        Hmasked = H
+    else:
+        Hmasked = np.ma.masked_where(maskFun(H), H)
+    if ax is None:
+        if fig is None:
+            fig = figure()
+        ax = fig.add_subplot(111, axisbg=bgcolor)
+    if log_normed:
+        pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap,
+                              norm=LogNorm(vmin=Hmasked.min(), vmax=Hmasked.max()))
+    else:
+        pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap)
+    if tight_layout:
+        plt.tight_layout()
+    #cbar = fig.colorbar(pmesh, **colorbar_kwargs)
+    cbar = fig.colorbar(pmesh)
+    colorbarTicklocs = cbar.ax.get_xticks()
+    cbar.set_ticklabels([r'$'+numFmt(n)+r'$' for n in colorbarTicklocs])
+    title_text = None
+    xlabel_text = None
+    ylabel_text = None
+    if not title is None:
+        title_text = ax.set_title(title)
+    if not xlabel is None:
+        xlabel_text = ax.set_xlabel(xlabel)
+    if not ylabel is None:
+        ylabel_text = ax.set_ylabel(ylabel)
+    if grid:
+        if isinstance(grid, bool):
+            ax.grid(b=grid)
+        else:
+            ax.grid(**grid)
+
+    return {'H': H, 'Hmasked':Hmasked, 'xedges':xedges, 'yedges':yedges,
+            'fig':fig, 'ax':ax, 'pmesh':pmesh, 'cbar':cbar,
+            'title_text':title_text, 'xlabel_text':xlabel_text, 'ylabel_text':ylabel_text}

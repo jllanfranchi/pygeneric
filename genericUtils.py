@@ -1,7 +1,7 @@
 import re, os, sys, time
 
 
-def timestamp(d=True, t=True, tz=True, utc=False, winsafe=True):
+def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
     '''Simple utility to print out a time, date, or time&date stamp,
     with some reconfigurability for commonly-used options. Default is in
     ISO8601 format without colons separating hours, min, and sec to avoid
