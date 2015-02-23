@@ -2,7 +2,8 @@
 
 import numpy as np
 from matplotlib.pyplot import *
-
+import matplotlib as mpl
+import matplotlib.gridspec as gridspec
 
 def scaleBin(ebin, factor):
     '''Make smaller-width bin centered about original bin.
@@ -10,9 +11,9 @@ def scaleBin(ebin, factor):
     Useful for plotting discrete lines with linewidth > 1 since the lines spill over into adjacent bins, so this allows for tight (no gap) or an arbitrary gap. A factor 
 
     '''
-    center = (ebin[0] + ebin[1])/2
+    center = (ebin[0] + ebin[1])/2.0
     width = ebin[1] - ebin[0]
-    return (center-width*factor/2, center+width*factor/2)
+    return (center-width*factor/2.0, center+width*factor/2.0)
 
 def gaussian(x, A, mu, sigma):
     return A * np.exp(-(x-mu)**2/2/sigma**2)
@@ -235,3 +236,64 @@ def plotGaussianParams(ax, fitDict, x0, y0, fg_color='k', bg_color='w',
     return y
 
 
+def hist2d(x, y, bins=10, range=None, normed=False, weights=None, maskFun=None,
+           ax=None, fig=None, tight_layout=False, log_normed=False,
+           bgcolor=(0.4,)*3, cmap=mpl.cm.afmhot,
+           colorbar_kwargs=None, #{'orientation':'vertical'}, #, 'ticks':2.0**np.arange(-10,10)},
+           title=None, xlabel=None, ylabel=None, grid=True):
+    
+    H, xedges, yedges = np.histogram2d(x=x, y=y, bins=bins, range=range, normed=normed, weights=weights)
+
+    if maskFun is None:
+        Hmasked = H
+    else:
+        Hmasked = np.ma.masked_where(maskFun(H), H)
+    
+    gs = None
+    if ax is None:
+        if fig is None:
+            fig = figure()
+        gs = gridspec.GridSpec(1, 1)
+        gs.update(left=0.05, right=0.95, wspace=0.05)
+        ax = subplot(gs[0,0], axisbg=bgcolor)
+
+    if log_normed:
+        pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap,
+                              norm=LogNorm(vmin=Hmasked.min(), vmax=Hmasked.max()))
+    else:
+        pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap)
+
+    cbar = fig.colorbar(pmesh, **colorbar_kwargs)
+    colorbarTicklocs = cbar.ax.get_xticks()
+    cbar.set_ticklabels([r'$'+numFmt(n)+r'$' for n in colorbarTicklocs])
+
+    title_text = None
+    xlabel_text = None
+    ylabel_text = None
+    if not title is None:
+        title_text = ax.set_title(title)
+    if not xlabel is None:
+        xlabel_text = ax.set_xlabel(xlabel)
+    if not ylabel is None:
+        ylabel_text = ax.set_ylabel(ylabel)
+    if grid:
+        if isinstance(grid, bool):
+            ax.grid(b=grid)
+        else:
+            ax.grid(**grid)
+
+    TOP = 0.90
+    BOTTOM = 0.08
+    RIGHT = 1.00
+    LEFT = 0.09
+
+    if tight_layout:
+        print 'tight_layout'
+        fig.tight_layout()
+    else:
+        print 'custom layout'
+        fig.subplots_adjust(top=TOP, bottom=BOTTOM, left=LEFT, right=RIGHT)
+
+    return {'H': H, 'Hmasked':Hmasked, 'xedges':xedges, 'yedges':yedges,
+            'fig':fig, 'gs': gs, 'ax':ax, 'pmesh':pmesh, 'cbar':cbar,
+            'title_text':title_text, 'xlabel_text':xlabel_text, 'ylabel_text':ylabel_text}

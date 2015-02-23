@@ -8,6 +8,15 @@ from matplotlib.colors import LinearSegmentedColormap, ListedColormap, LogNorm, 
 
 from smartFormat import numFmt, numFmt2
 
+MARKERS = ['.', 'v', 'o', '*', '+', 'D', '^', 's', 'p', 'x', '<', '>', 'h', 'H', 'd', '|', '_']
+
+DARK_BLUE = (0.0, 0.0, 0.7)
+DARK_RED =  (0.7, 0.0, 0.0)
+
+LIGHT_BLUE = (0.4, 0.4, 0.8)
+LIGHT_RED =  (0.8, 0.4, 0.4)
+
+
 '''
 Use the following as:
 #mpl.rc('axes', color_cycle=colorCycleOrthog)
@@ -513,48 +522,3 @@ class ScaledMaxNLocator(mpl.ticker.MaxNLocator):
 
 def maskZeros(H):
     return H == 0
-
-def hist2d(x, y, bins=10, range=None, normed=False, weights=None, maskFun=None,
-           ax=None, fig=None, tight_layout=True, log_normed=False,
-           bgcolor=(0.4,)*3, cmap=mpl.cm.afmhot,
-           colorbar_kwargs=None, #{'orientation':'vertical'}, #, 'ticks':2.0**np.arange(-10,10)},
-           colorbar_label=None,
-           title=None, xlabel=None, ylabel=None, grid=True):
-    H, xedges, yedges = np.histogram2d(x=x, y=y, bins=bins, range=range, normed=normed, weights=weights)
-    if maskFun is None:
-        Hmasked = H
-    else:
-        Hmasked = np.ma.masked_where(maskFun(H), H)
-    if ax is None:
-        if fig is None:
-            fig = figure()
-        ax = fig.add_subplot(111, axisbg=bgcolor)
-    if log_normed:
-        pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap,
-                              norm=LogNorm(vmin=Hmasked.min(), vmax=Hmasked.max()))
-    else:
-        pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap)
-    if tight_layout:
-        plt.tight_layout()
-    #cbar = fig.colorbar(pmesh, **colorbar_kwargs)
-    cbar = fig.colorbar(pmesh)
-    colorbarTicklocs = cbar.ax.get_xticks()
-    cbar.set_ticklabels([r'$'+numFmt(n)+r'$' for n in colorbarTicklocs])
-    title_text = None
-    xlabel_text = None
-    ylabel_text = None
-    if not title is None:
-        title_text = ax.set_title(title)
-    if not xlabel is None:
-        xlabel_text = ax.set_xlabel(xlabel)
-    if not ylabel is None:
-        ylabel_text = ax.set_ylabel(ylabel)
-    if grid:
-        if isinstance(grid, bool):
-            ax.grid(b=grid)
-        else:
-            ax.grid(**grid)
-
-    return {'H': H, 'Hmasked':Hmasked, 'xedges':xedges, 'yedges':yedges,
-            'fig':fig, 'ax':ax, 'pmesh':pmesh, 'cbar':cbar,
-            'title_text':title_text, 'xlabel_text':xlabel_text, 'ylabel_text':ylabel_text}
