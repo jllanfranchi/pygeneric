@@ -2,10 +2,12 @@
 
 import numpy as np
 import constants as const
+import matplotlib._cntr as cntr
+import matplotlib.path as mplPath
 
 
 def cart2pol(x, y=None):
-    if y == None:
+    if y is None:
         X = x[:,0]
         Y = x[:,1]
     else:
@@ -17,20 +19,26 @@ def cart2pol(x, y=None):
 
 def sph2cart(r, theta, phi):
     '''
-        r       distance from origin
-        theta   inclination/zenith/co-latitude angle (out/down from the +z-axis)
-        phi     azimuth/longitude angle (positive is counter-clockwise about equator)
-    returns
-        x
-        y
-        z
+    Arguments
+    ---------
+    r
+        distance from origin
+    theta
+        inclination/zenith/co-latitude angle (out/down from the +z-axis)
+    phi
+        azimuth/longitude angle (positive is counter-clockwise about equator)
+
+    Returns
+    -------
+    x, y, z 
+        Cartesian coordinate(s)
     '''
-    stheta = np.sin(theta)
-    return r*stheta*np.cos(phi), r*stheta*np.sin(phi), r*np.cos(theta)
+    sintheta = np.sin(theta)
+    return r*sintheta*np.cos(phi), r*sintheta*np.sin(phi), r*np.cos(theta)
 
 
 def pol2cart(r, theta=None):
-    if theta==None:
+    if theta is None:
         R = r[:,0]
         THETA = r[:,1]
     else:
@@ -62,6 +70,8 @@ def polyCentroid(vert):
     you).
 
     See http://paulbourke.net/geometry/polygonmesh for reference'''
+    if isinstance(vert, mplPath.Path):
+        vert = vert.vertices
 
     vert1 = np.roll(vert, shift=-1, axis=0)
     xi = vert[:,0]
@@ -116,6 +126,25 @@ def cherenkovAngle(n, speed, light_vac_speed=const.c):
     beta = speed / light_vac_speed
     cos_theta = 1/(n*beta)
     return np.arccos(cos_theta)
+
+
+def polyArea(x,y):
+    '''From
+    http://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates
+    user Mahdi'''
+    return 0.5*np.abs( np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)) )
+
+
+def contourPaths(x, y, z, z_thresh):
+    '''Returns list of matplotlib path(s) representing contour line(s) at
+    z_thresh. Credit:Ian Thomas-8
+    http://matplotlib.1069221.n5.nabble.com/pyplot-Extract-contourset-without-plotting-td15868.html
+    '''
+    contour_vertices = cntr.Cntr(x, y, z)
+    nlist = contour_vertices.trace(z_thresh, z_thresh, 0)
+    segments = nlist[:len(nlist)//2]
+    paths = [mplPath.Path(s) for s in segments]
+    return paths
 
 
 if __name__ == "__main__":

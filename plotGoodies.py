@@ -1,12 +1,14 @@
 from __future__ import division
 
+import colorsys
 import numpy as np
 from pylab import *
+from fractions import Fraction
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap, LogNorm, PowerNorm
 
-from smartFormat import numFmt, numFmt2
+from smartFormat import smartFormat, TeX, numFmt, numFmt2
 
 MARKERS = ['.', 'v', 'o', '*', '+', 'D', '^', 's', 'p', 'x', '<', '>', 'h', 'H', 'd', '|', '_']
 
@@ -23,10 +25,10 @@ Use the following as:
 source: http://stackoverflow.com/questions/470690/how-to-automatically-generate-n-distinct-colors
 ... but modified somewhat from that!
 '''
-colorCycleOrthog = [
+colorCycleOrthog = (
     '#000000', #  0  Black
-    '#FFB300', #  1  Vivid Yellow
     '#803E75', #  2  Strong Purple
+    '#FFB300', #  1  Vivid Yellow
     '#FF6800', #  3  Vivid Orange
     '#8A9DD7', #  4  Very Light Blue
     '#C10020', #  5  Vivid Red
@@ -49,9 +51,44 @@ colorCycleOrthog = [
     #'#F13A13', # 13  Vivid Reddish Orange
     #'#B32851', # 16  Strong Purplish Red
     #'#FF7A5C', # 19  Strong Yellowish Pink
-]
+)
 
-colorCycleRainbow = [
+def invertColor(c):
+    r, g, b, a = mpl.colors.colorConverter.to_rgba(c)
+    if len(c) == 3:
+        return (1-r, 1-g, 1-b)
+    return (1-r, 1-g, 1-b, a)
+    #if isinstance(c, basestring):
+    #    c = c.replace('#', '')
+    #    r, g, b = (int(c[2*i:2*i+2], 16) for i in range(3))
+    #    ri = 255-r
+    #    gi = 255-g
+    #    bi = 255-b
+    #    return '#%02x%02x%02x'%(ri,gi,bi)
+
+def hsvaFact(c, hf=1.0, sf=1.0, vf=1.0, af=1.0, clip=True):
+    r, g, b, a = mpl.colors.colorConverter.to_rgba(c)
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    ri, gi, bi = colorsys.hsv_to_rgb(h*hf, s*sf, v*vf)
+    if clip:
+        # Clip all values to range [0,1]
+        result = (np.clip(ri,0,1), np.clip(gi,0,1), np.clip(bi,0,1),
+                  np.clip(a*af,0,1))
+    else:
+        # Rescale to fit largest within [0,1]; if all of r,g,b fit in this
+        # range, do nothing
+        maxval = max(ri, gi, bi)
+        # Scale colors if one exceeds range
+        if maxval > 1:
+            ri /= maxval
+            gi /= maxval
+            bi /= maxval
+        # Clip alpha to range [0,1]
+        alpha = np.clip(a*af)
+        result = (ri, gi, bi, alpha)
+    return result
+
+colorCycleRainbow = (
     '#FF1008',
     '#FF5C2F',
     '#FFA055',
@@ -63,10 +100,11 @@ colorCycleRainbow = [
     '#1C93F3',
     '#4E4DFC',
     '#8000FF',
-]
+)
 
 human_safe = ListedColormap(colorCycleOrthog, name='human_safe')
 my_rainbow = ListedColormap(colorCycleRainbow, name='my_rainbow')
+
 
 def grayify_cmap(cmap):
     """Return a grayscale version of the colormap
@@ -111,9 +149,10 @@ def plotColorCycle(color_cycle=colorCycleOrthog):
 
 def plotDefaults():
     plt.ion()
-    mpl.rc('font', **{'family':'serif', 'weight':'normal', 'size': 8})
+    mpl.rc('font', **{'family':'serif', 'weight':'normal', 'size': 16})
     mpl.rc('axes', color_cycle=human_safe.colors)
     #generateColorCycle(n_colors=6)
+
 
 def generateColorCycle(cmap=mpl.cm.brg, n_colors=8, set_it=True):
     cmap_indices = np.array(
@@ -126,11 +165,17 @@ def generateColorCycle(cmap=mpl.cm.brg, n_colors=8, set_it=True):
         mpl.rc('axes', color_cycle=color_cycle)
     return color_cycle
 
+
+def rugplot(a, y0, dy, ax, **kwargs):
+    return ax.plot([a,a], [y0, y0+dy], **kwargs)
+
+
 def peakInfo(xdata, ydata):
     maxvalind = np.argmax(ydata)
     maxx = xdata[maxvalind]
     #halfPower = 
     halfInd = find(ydata < halfPower)
+
 
 def onpick_peakfind(event):
     '''Use this by:
@@ -519,6 +564,62 @@ class ScaledMaxNLocator(mpl.ticker.MaxNLocator):
         vmin, vmax = self.axis.get_view_interval()
         #print self.scale, vmin, vmax, [float(tl)/float(self.scale) for tl in self.tick_values(vmin*self.scale, vmax*self.scale)]
         return [float(tl)/float(self.scale) for tl in self.tick_values(vmin*self.scale, vmax*self.scale)]
+
+
+def logticks_format(value, index):
+    """
+    By Francesco Montesano
+    http://stackoverflow.com/questions/19239297/matplotlib-bad-ticks-labels-for-loglog-twin-axis
+    This function decompose value in base*10^{exp} and return a latex string.
+    If 0<=value<99: return the value as it is.
+    if 0.1<value<0: returns as it is rounded to the first decimal
+    otherwise returns $base*10^{exp}$
+    I've designed the function to be use with values for which the decomposition
+    returns integers
+    
+    Use as:
+        import matplotlib.ticker as ticker
+        subs = [1., 3., 6.]
+        ax.xaxis.set_minor_locator(ticker.LogLocator(subs=subs))
+        ax.xaxis.set_major_formatter(ticker.NullFormatter())
+        ax.xaxis.set_minor_formatter(ticker.FuncFormatter(ticks_format))
+    """
+    exp = np.floor(np.log10(value))
+    base = value/10**exp
+    if exp == 0 or exp == 1:
+        return '${0:d}$'.format(int(value))
+    if exp == -1:
+        return '${0:.1f}$'.format(value)
+    else:
+        if base == 1:
+            return '$10^{{{0:d}}}$'.format(int(exp))
+        return '${0:d}\\times10^{{{1:d}}}$'.format(int(base), int(exp))
+
+def smartticks_format(**kwargs):
+    sfmtargs = dict(sciThresh=[4,4],
+                    sigFigs=3,
+                    keepAllSigFigs=False)
+    if not kwargs is None:
+        sfmtargs.update(kwargs)
+    def smart_ticks_formatter(value, index):
+        return smartFormat(value, **sfmtargs)
+    return smart_ticks_formatter
+
+
+def fmtstr_format(fmt):
+    def fixed_ticks_formatter(value, index):
+        return TeX(format(value, fmt))
+    return fixed_ticks_formatter
+
+
+def fractticks_format(DENOM_LIMIT):
+    def fract_ticks_formatter(value, index):
+        f = Fraction(value).limit_denominator(DENOM_LIMIT)
+        if f.denominator == 1:
+            return r'$' + format(f.numerator,'d') + r'$'
+        return r'$' + format(f.numerator,'d') + r'/' + format(f.denominator,'d') + r'$'
+    return fract_ticks_formatter
+
 
 def maskZeros(H):
     return H == 0

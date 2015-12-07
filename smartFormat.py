@@ -42,7 +42,7 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
                 alignOnDec=False, threeSpacing=True, alwaysShowSign=False,
                 forcedExp=None, demarc=r'$', alignChar=r"&",
                 leftSep=r"{,}", rightSep=r"{\,}", decSep=r".",
-                nanSub=r"---", inftyThresh=np.infty,
+                nanSub=r"--", inftyThresh=np.infty,
                 expLeftFmt=r"{\times 10^{", expRightFmt=r"}}"):
 
     if hasattr(x, '__iter__'):
@@ -400,6 +400,10 @@ def texLP(x,
         nanSub=nanSub, inftyThresh=inftyThresh, expLeftFmt=expLeftFmt,
         expRightFmt=expRightFmt
     )
+
+def fnameNumFmt(x, **kwargs):
+        return texLP(x,sciThresh=[100,100], leftSep='',
+                     rightSep='', threeSpacing=False, **kwargs) #sigFigs=5, keepAllSigFigs=False, **kwargs)
 
 def numFmt(x, **kwargs):
         return texLP(x,sciThresh=[10,10], leftSep='\hspace{0.20}',

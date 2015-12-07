@@ -1,36 +1,78 @@
 #!/usr/bin/evn python
 
+from __future__ import division
+
+import copy
 import numpy as np
 from matplotlib.pyplot import *
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
+from matplotlib.colors import LogNorm
+import plotGoodies as PG
 
 def scaleBin(ebin, factor):
     '''Make smaller-width bin centered about original bin.
 
-    Useful for plotting discrete lines with linewidth > 1 since the lines spill over into adjacent bins, so this allows for tight (no gap) or an arbitrary gap. A factor 
+    Useful for plotting discrete lines with linewidth > 1 since the lines spill
+    over into adjacent bins, so this allows for tight (no gap) or an arbitrary
+    gap. A factor 
 
     '''
     center = (ebin[0] + ebin[1])/2.0
     width = ebin[1] - ebin[0]
     return (center-width*factor/2.0, center+width*factor/2.0)
 
+
+def logBinCenters(bin_edges):
+    bin_edges = np.array(bin_edges)
+    #width_factors = bin_edges[1:]/bin_edges[:-1]
+    #centers = bin_edges[:-1] * np.sqrt(width_factors)
+    #return centers
+    return np.sqrt(bin_edges[:-1] * bin_edges[1:])
+
+
+def linBinCenters(bin_edges):
+    bin_edges = np.array(bin_edges)
+    centers = (bin_edges[:-1]+bin_edges[1:])/2.0
+    return centers
+
+
+def isLogSpacing(bin_edges):
+    bin_edges = np.array(bin_edges)
+    mult_widths = bin_edges[1:] / bin_edges[:-1]
+    if np.allclose(mult_widths[1:], mult_widths[0], rtol=1e-8, abstol=1e-5):
+        return True
+
+
+def autoBinCenters(bin_edges):
+    # Are bins logarithmically spaced?
+    if isLogSpacing(bin_edges):
+        return logBinCenters(bin_edges)
+    # of if any other spacing, return linear centers...
+    else:
+        return linBinCenters(bin_edges)
+
+
 def gaussian(x, A, mu, sigma):
     return A * np.exp(-(x-mu)**2/2/sigma**2)
 
+
 def twoGaussian(x, A1, A2, mu1, mu2, sigma1, sigma2):
     return gaussian(x, A1, mu1, sigma1) + gaussian(x, A2, mu2, sigma2)
+
 
 def gaussianErr(params, x, data):
     return gaussian(x, A=params['A1'].value,
                        mu=params['mu1'].value,
                        sigma=params['sigma1'].value) - data
 
+
 def twoGaussianErr(params, x, data):
     return twoGaussian(x, A1=params['A1'].value, A2=params['A2'].value,
                        mu1=params['mu1'].value, mu2=params['mu2'].value,
                        sigma1=params['sigma1'].value,
                        sigma2=params['sigma2'].value) - data
+
 
 def fitGaussainHist(binEdges, binCounts):
     # TODO: log-likelihood method, Chi-squared
@@ -236,13 +278,134 @@ def plotGaussianParams(ax, fitDict, x0, y0, fg_color='k', bg_color='w',
     return y
 
 
-def hist2d(x, y, bins=10, range=None, normed=False, weights=None, maskFun=None,
+def autoBin(data, bins, log=False, overlap=0, overlap_is_pct=False):
+    if hasattr(bins, '__iter__'):
+        if hasattr(bins[0], '__iter__'):
+            bins = np.array(bins)
+        else:
+            bins = np.array(zip(bins[0:-1], bins[1:]))
+    else:
+        dmin = min(data)
+        dmax = max(data)
+        drange = dmax-dmin
+        n_bins = bins
+        n_overlaps = n_bins - 1
+        bin_width = (drange + n_overlaps*overlap)/n_bins
+        left_edges = np.arange(dmin, dmax+bin_width, bin_width)
+
+    overlap = bins[1::2,0] - bins[::2,1]
+
+
+def medianPlot2D(x, y, z, xbins=None, ybins=None):
+    xmin = min(x)
+    xmax = max(x)
+    xr = xmax-xmin
+    ymin = min(x)
+    ymax = max(y)
+    yr = ymax-ymin
+    if xbins is None:
+        n_xbins = 50
+    try:
+        n_xbins = len(xbins)
+        #xbins = 
+    except:
+        pass
+
+
+def stepHist(bin_edges, y, yerr=None,
+             plt_lr_edges=False, lr_edge_val=0,
+             ax=None, eband_kwargs={}, **kwargs):
+    x = np.array(zip(bin_edges, bin_edges)).flatten()
+    y = np.array(
+        [lr_edge_val] + list(np.array(zip(y, y)).flatten()) + [lr_edge_val],
+        dtype=np.float64
+    )
+
+    # Populate the y-errors
+    if yerr is not None:
+        if np.isscalar(yerr[0]):
+            yerr_low = [-e for e in yerr]
+            yerr_high = yerr
+        else:
+            yerr_low = yerr[0]
+            yerr_high = yerr[1]
+        yerr_low = np.array(
+            [lr_edge_val] +
+            list(np.array(zip(yerr_low, yerr_low)).flatten()) +
+            [lr_edge_val],
+            dtype=np.float64
+        )
+        yerr_high = np.array(
+            [lr_edge_val] +
+            list(np.array(zip(yerr_high, yerr_high)).flatten()) +
+            [lr_edge_val],
+            dtype=np.float64
+        )
+
+    # Remove extra values at edges if not plotting the extreme edges
+    if not plt_lr_edges:
+        x = x[1:-1]
+        y = y[1:-1]
+        if yerr is not None:
+            yerr_low = yerr_low[1:-1]
+            yerr_high = yerr_high[1:-1]
+
+    # Create an axis if one isn't supplied
+    if ax is None:
+        f = figure()
+        ax = f.add_subplot(111)
+    
+    # Plot the y-error bands
+    err_plt = None
+    if yerr is not None:
+        custom_hatch = False
+        if 'hatch' in eband_kwargs:
+            hatch_kwargs = copy.deepcopy(eband_kwargs)
+            hatch_kwargs['facecolor'] = (1,1,1,0)
+            eband_kwargs['hatch'] = None
+            custom_hatch = True
+        err_plt = ax.fill_between(x, y1=y+yerr_low, y2=y+yerr_high,
+                                  **eband_kwargs)
+        if custom_hatch:
+            hatch_plt = ax.fill_between(x, y1=y+yerr_low, y2=y+yerr_high,
+                                        **hatch_kwargs)
+    
+    # Plot the nominal values
+    nom_lines = ax.plot(x, y, **kwargs)[0]
+
+    # Match error bands' color to nominal lines
+    if yerr is not None and not (('fc' in eband_kwargs) or
+                                 ('facecolor' in eband_kwargs)):
+        nl_color = nom_lines.get_color()
+        nl_lw = nom_lines.get_linewidth()
+
+        ep_facecolor = PG.hsvaFact(nl_color, sf=0.8, vf=1, af=0.5)
+        #ep_edgecolor = PG.hsvaFact(nl_color, sf=0.8, vf=0.5, af=0.3)
+        ep_edgecolor = 'none'
+        err_plt.set_color(ep_facecolor)
+        err_plt.set_facecolor(ep_facecolor)
+        err_plt.set_edgecolor(ep_edgecolor)
+        err_plt.set_linewidth(nl_lw*0.5)
+    
+        hatch_plt.set_color(eband_kwargs['edgecolor'])
+        hatch_plt.set_facecolor((1,1,1,0))
+        hatch_plt.set_edgecolor(eband_kwargs['edgecolor'])
+        hatch_plt.set_linewidth(nl_lw*0.5)
+    return ax, nom_lines, err_plt
+
+
+def hist2d(x, y, bins=200, range=None, normed=False, weights=None, maskFun=None,
            ax=None, fig=None, tight_layout=False, log_normed=False,
-           bgcolor=(0.4,)*3, cmap=mpl.cm.afmhot,
-           colorbar_kwargs=None, #{'orientation':'vertical'}, #, 'ticks':2.0**np.arange(-10,10)},
+           bgcolor=(0.6,)*3, cmap=mpl.cm.afmhot,
+           vmin=None, vmax=None,
+           colorbar_kwargs=None,
+           #{'orientation':'vertical'}, #, 'ticks':2.0**np.arange(-10,10)},
            title=None, xlabel=None, ylabel=None, grid=True):
     
-    H, xedges, yedges = np.histogram2d(x=x, y=y, bins=bins, range=range, normed=normed, weights=weights)
+    if colorbar_kwargs is None:
+        colorbar_kwargs = {'orientation':'vertical'} #, 'ticks':2.0**np.arange(-10,10)},
+    H, xedges, yedges = np.histogram2d(x=x, y=y, bins=bins, range=range,
+                                       normed=normed, weights=weights)
 
     if maskFun is None:
         Hmasked = H
@@ -254,14 +417,15 @@ def hist2d(x, y, bins=10, range=None, normed=False, weights=None, maskFun=None,
         if fig is None:
             fig = figure()
         gs = gridspec.GridSpec(1, 1)
-        gs.update(left=0.05, right=0.95, wspace=0.05)
+        gs.update(left=0.10, right=0.95, wspace=0.05, bottom=0.1)
         ax = subplot(gs[0,0], axisbg=bgcolor)
 
     if log_normed:
         pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap,
                               norm=LogNorm(vmin=Hmasked.min(), vmax=Hmasked.max()))
     else:
-        pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap)
+        pmesh = ax.pcolormesh(xedges, yedges, Hmasked.T, cmap=cmap,
+                              vmin=vmin, vmax=vmax)
 
     cbar = fig.colorbar(pmesh, **colorbar_kwargs)
     colorbarTicklocs = cbar.ax.get_xticks()

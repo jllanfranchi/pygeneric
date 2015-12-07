@@ -1,13 +1,15 @@
-# DO NOT CHANGE THIS FILE!
+# DO NOT CHANGE THIS FILE! (?)
 #
 # This file contains the functions linear_fit for fitting a straight
 # line to data and general_fit for fitting any user-defined funciton
 # to data.  To use either of them,  the first line of your program
 # should be "from fitting import *".
 
-
-from math import sqrt
+import lmfit
 import sys
+import numpy as np
+from scipy.optimize import curve_fit
+
 
 def linear_fit(xdata, ydata, ysigma=None):
 
@@ -29,7 +31,7 @@ def linear_fit(xdata, ydata, ysigma=None):
     """
     
     if ysigma is None:
-        w = ones(len(ydata)) # Each point is equally weighted.
+        w = np.ones(len(ydata)) # Each point is equally weighted.
     else:
         w=1.0/(ysigma**2)
 
@@ -42,8 +44,8 @@ def linear_fit(xdata, ydata, ysigma=None):
 
     a = (sw*swxy - swx*swy)/(sw*swx2 - swx*swx)
     b = (swy*swx2 - swx*swxy)/(sw*swx2 - swx*swx)
-    sa = sqrt(sw/(sw*swx2 - swx*swx))
-    sb = sqrt(swx2/(sw*swx2 - swx*swx))
+    sa = np.sqrt(sw/(sw*swx2 - swx*swx))
+    sb = np.sqrt(swx2/(sw*swx2 - swx*swx))
 
     if ysigma is None:
         chi2 = sum(((a*xdata + b)-ydata)**2)
@@ -57,11 +59,6 @@ def linear_fit(xdata, ydata, ysigma=None):
     #print '   reduced chi squared = ', rchi2
 
     return a, b, sa, sb, rchi2, dof
-
-
-
-from scipy.optimize import curve_fit
-from pylab import *  # for array, zeros, arange
 
 
 def general_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
@@ -84,13 +81,25 @@ def general_fit(f, xdata, ydata, p0=None, sigma=None, **kw):
     #print '   reduced chi squared = ', rchi2
 
     # The uncertainties are the square roots of the diagonal elements
-    punc = zeros(len(popt))
+    punc = np.zeros(len(popt))
     
     #sys.stdout.write("\n --> punc: " + str(punc) +
     #                 "\n --> pcov: " + str(pcov) +
     #                 "\n")
     #sys.stdout.flush()
 
-    for i in arange(0,len(popt)):
-        punc[i] = sqrt(pcov[i,i])
+    for i in np.arange(0,len(popt)):
+        punc[i] = np.sqrt(pcov[i,i])
     return popt, punc, rchi2, dof
+
+
+def powerlaw_fit(x, y):
+    #mod = lmfit.models.PowerLawModel()
+    mod = lmfit.models.LinearModel()
+    ly = np.log10(y)
+    lx = np.log10(x)
+    pars = mod.guess(ly, x=lx)
+    out = mod.fit(ly, pars, x=lx)
+    return 10**pars['intercept'].value, pars['slope'].value
+    #return pars['amplitude'].value, pars['exponent'].value
+
