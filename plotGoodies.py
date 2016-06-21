@@ -28,9 +28,9 @@ source: http://stackoverflow.com/questions/470690/how-to-automatically-generate-
 colorCycleOrthog = (
     '#000000', #  0  Black
     '#803E75', #  2  Strong Purple
-    '#FFB300', #  1  Vivid Yellow
     '#FF6800', #  3  Vivid Orange
     '#8A9DD7', #  4  Very Light Blue
+    '#FFB300', #  1  Vivid Yellow
     '#C10020', #  5  Vivid Red
     '#CEA262', #  6  Grayish Yellow
     '#817066', #  7  Medium Gray

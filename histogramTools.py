@@ -2,20 +2,25 @@
 
 from __future__ import division
 
-import copy
+from copy import deepcopy
+from itertools import izip
 import numpy as np
+import matplotlib as mpl
+#mpl.use('pdf')
 from matplotlib.pyplot import *
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
 from matplotlib.colors import LogNorm
+
 import plotGoodies as PG
+
 
 def scaleBin(ebin, factor):
     '''Make smaller-width bin centered about original bin.
 
-    Useful for plotting discrete lines with linewidth > 1 since the lines spill
-    over into adjacent bins, so this allows for tight (no gap) or an arbitrary
-    gap. A factor 
+    Useful for plotting discrete lines with linewidth > 1 since the lines
+    spill over into adjacent bins, so this allows for tight (no gap) or an
+    arbitrary gap. A factor 
 
     '''
     center = (ebin[0] + ebin[1])/2.0
@@ -53,6 +58,78 @@ def autoBinCenters(bin_edges):
         return linBinCenters(bin_edges)
 
 
+def histogram_with_error(a, bins=10, range=None, weights=None,
+                         density=None):
+    """Like numpy.histogram but also computes and returns per-bin error.
+    
+    See `numpy.histogram` for help on arguments.
+
+    Returns
+    -------
+    hist : array
+        The values of the historam. See `normed` and `weights` for a
+        description of the possible semantics.
+    bin_edges : array of dtype float
+        Return the bin edges ``(length(hist)+1)``.
+    err : array of dtype float
+        Error for each bin, taking `weights` into account if supplied.
+
+    See Also
+    --------
+    numpy.histogram
+    """
+    #if density:
+    #    raise NotImplementedError('`density=True` not implemented correctly yet.')
+    if weights is None:
+        hist, bin_edges = np.histogram(a=a, bins=bins, range=range,
+                                       weights=weights, density=False)
+        err = np.sqrt(hist)
+        if density:
+            norm_fact = 1.0 / np.sum(hist * np.diff(bin_edges))
+            hist = hist * norm_fact
+            err = err * norm_fact
+
+        return hist, bin_edges, err
+
+    if np.isscalar(bins):
+        if range is None:
+            range = (np.min(a), np.max(a))
+        assert len(range) == 2
+        bin_edges = np.linspace(range[0], range[1], bins+1)
+        n_bins = bins
+    else:
+        n_bins = len(bins) - 1
+        assert n_bins > 1
+        bin_edges = bins
+
+    bin_nums = np.digitize(x=a, bins=bin_edges, right=False)
+
+    hist = np.zeros(n_bins)
+    err = np.zeros(n_bins)
+    for idx, (bin_num, weight) in enumerate(izip(bin_nums, weights)):
+        bin_num -= 1
+        if bin_num < 0:
+            continue
+        if bin_num == n_bins:
+            if a[idx] == bin_edges[-1]:
+                bin_num -= 1
+            else:
+                continue
+        elif bin_num > n_bins:
+            continue
+        hist[bin_num] += weight
+        err[bin_num] += weight*weight
+
+    if density:
+        norm_fact = 1.0 / np.sum(hist * np.diff(bin_edges))
+        hist = hist * norm_fact
+        err = err * (norm_fact*norm_fact)
+
+    err = np.sqrt(err)
+
+    return hist, bin_edges, err
+
+
 def gaussian(x, A, mu, sigma):
     return A * np.exp(-(x-mu)**2/2/sigma**2)
 
@@ -88,9 +165,9 @@ def fitGaussainHist(binEdges, binCounts):
 
     weightedData = binCenters * binCounts
 
-    #-- Initial guess for central gaussian: mu, sigma simply taken from central
-    #   region's mean and std dev; amplitude guess is found from largest point
-    #   in this region
+    # Initial guess for central gaussian: mu, sigma simply taken from
+    # central region's mean and std dev; amplitude guess is found from
+    # largest point in this region
     mu1_0 = np.mean(weightedData)
     sigma1_0 = 3 #np.std(weightedData)
     maxInd = np.where(binCounts == np.max(binCounts))
@@ -100,20 +177,23 @@ def fitGaussainHist(binEdges, binCounts):
 
     p0 = [A1_0, mu1_0, sigma1_0]
 
-    popt, pcov = sp.optimize.curve_fit(gaussian, binCenters, binCounts, p0=p0)
+    popt, pcov = sp.optimize.curve_fit(gaussian, binCenters, binCounts,
+                                       p0=p0)
 
     return {'popt':popt, 'pcov':pcov, 'function':gaussian}
     
 
-def fitTwoGaussainHist(bin_centers, bin_counts, sigma0=None, auto_1d_or_2d=False):
+def fitTwoGaussainHist(bin_centers, bin_counts, sigma0=None,
+                       auto_1d_or_2d=False):
     # TODO: throw some number of points distrubuted evenly thoughout each
     #       non-zero-count bin's binwidth to avoid the peaks that pop up
     #       between bin centers
     # TODO: Use a constrained minimizer:
     #       - No negative amplitudes
     #       - No negative sigma
-    #       - Sigma must be greater than distance between bins, or bin width,
-    #         or... ? ; how to deal with non-uniform bin widths/spacings?
+    #       - Sigma must be greater than distance between bins, or bin
+    #         width, or... ? ; how to deal with non-uniform bin
+    #         widths/spacings?
     # TODO: Pick between the better of 1- and 2-gaussian fits, return
     #       only the results of the better one (make optional via function
     #       parameter)
@@ -140,9 +220,9 @@ def fitTwoGaussainHist(bin_centers, bin_counts, sigma0=None, auto_1d_or_2d=False
     #print centralInd, tailsInd
     #print central_bin_centers
 
-    #-- Initial guess for central gaussian: mu, sigma simply taken from central
-    #   region's mean and std dev; amplitude guess is found from largest point
-    #   in this region
+    # Initial guess for central gaussian: mu, sigma simply taken from
+    # central region's mean and std dev; amplitude guess is found from
+    # largest point in this region
     mu1_0 = np.mean(weightedData[centralInd])
     if sigma0 == None:
         sigma1_0 = 3 #np.std(weightedData[centralInd])
@@ -150,41 +230,52 @@ def fitTwoGaussainHist(bin_centers, bin_counts, sigma0=None, auto_1d_or_2d=False
     else:
         sigma1_0 = sigma0[0]
         sigma2_0 = sigma0[1]
-    maxCentralInd = np.where(bin_counts[centralInd] == np.max(bin_counts[centralInd]))
+    maxCentralInd = np.where(bin_counts[centralInd] ==
+                             np.max(bin_counts[centralInd]))
     maxCentralInd_x = bin_centers[centralInd][maxCentralInd][0]
     maxCentralInd_y = bin_counts[centralInd][maxCentralInd][0]
-    A1_0 = maxCentralInd_y * np.exp((maxCentralInd_x-mu1_0)**2/(2*sigma1_0**2))
+    A1_0 = maxCentralInd_y \
+            * np.exp((maxCentralInd_x-mu1_0)**2/(2*sigma1_0**2))
 
-    #-- Initial guess for tail gaussian: mu, sigma from mean and stddev of both
-    #   tails combined; amplitude guess is found from largest point in the tail
-    #   region
+    # Initial guess for tail gaussian: mu, sigma from mean and stddev of
+    # both tails combined; amplitude guess is found from largest point in
+    # the tail region
     mu2_0 = np.mean(weightedData[tailsInd])
     #sigma2_0 = 5 #np.std(weightedData[tailsInd])
-    maxTailsInd = np.where(bin_counts[tailsInd] == np.max(bin_counts[tailsInd]))
+    maxTailsInd = np.where(bin_counts[tailsInd] ==
+                           np.max(bin_counts[tailsInd]))
     maxTailsInd_x = bin_centers[tailsInd][maxTailsInd][0]
     maxTailsInd_y = bin_counts[tailsInd][maxTailsInd][0]
     A2_0 = maxTailsInd_y * np.exp((maxTailsInd_x-mu2_0)**2/(2*sigma2_0**2))
 
     params1 = Parameters()
     params1.add('A1', value=A1_0, min=0)
-    params1.add('mu1', value=mu1_0, min=min(central_bin_centers), max=max(central_bin_centers))
-    params1.add('sigma1', value=sigma1_0, min=np.abs(min(np.diff(bin_centers))), max=(central_bin_centers[-1]-central_bin_centers[0])/2)
+    params1.add('mu1', value=mu1_0, min=min(central_bin_centers),
+                max=max(central_bin_centers))
+    params1.add('sigma1', value=sigma1_0,
+                min=np.abs(min(np.diff(bin_centers))),
+                max=(central_bin_centers[-1]-central_bin_centers[0])/2)
 
-    params2 = copy.deepcopy(params1)
+    params2 = deepcopy(params1)
     params2.add('A2', value=A2_0, min=0)
-    params2.add('mu2', value=mu2_0, min=min(central_bin_centers), max=max(central_bin_centers))
-    params2.add('sigma2', value=sigma2_0, min=np.abs(min(np.diff(bin_centers))), max=(central_bin_centers[-1]-central_bin_centers[0])/2)
+    params2.add('mu2', value=mu2_0, min=min(central_bin_centers),
+                max=max(central_bin_centers))
+    params2.add('sigma2', value=sigma2_0,
+                min=np.abs(min(np.diff(bin_centers))),
+                max=(central_bin_centers[-1]-central_bin_centers[0])/2)
 
     #print 'DEBUG:', len(params), bin_centers, bin_counts
     try:
-        result1 = minimize(gaussianErr, params1, args=(bin_centers, bin_counts))
+        result1 = minimize(gaussianErr, params1, args=(bin_centers,
+                                                       bin_counts))
         mse1 = np.sum(result1.residual**2)
     except:
         result1 = None
         mse1 = np.inf
 
     try:
-        result2 = minimize(twoGaussianErr, params2, args=(bin_centers, bin_counts))
+        result2 = minimize(twoGaussianErr, params2, args=(bin_centers,
+                                                          bin_counts))
         mse2 = np.sum(result2.residual**2)
     except:
         result2 = None
@@ -218,8 +309,8 @@ def fitTwoGaussainHist(bin_centers, bin_counts, sigma0=None, auto_1d_or_2d=False
 
 
 def plotGaussianParams(ax, fitDict, x0, y0, fg_color='k', bg_color='w',
-                       rh=0.04, tw=0.15, fs=16, title=None, title_suffix='',
-                       display_title=True, title_fs=20):
+                       rh=0.04, tw=0.15, fs=16, title=None,
+                       title_suffix='', display_title=True, title_fs=20):
     borderLW = 3
     # TODO: White outline around fit labels
     popt = fitDict['popt']
@@ -234,13 +325,15 @@ def plotGaussianParams(ax, fitDict, x0, y0, fg_color='k', bg_color='w',
             if n_gaussians == 1:
                 title = r'$\mathrm{Gaussian\,fit}$'
             else:
-                title = r'$' + numFmt(n_gaussians) + r'\mathrm{-gaussian\,fit}$'
+                title = r'$' + numFmt(n_gaussians) \
+                        + r'\mathrm{-gaussian\,fit}$'
         fullTitleText = title + title_suffix
         #ax.text(x+tw/2.0,y,title, va='center', ha='left', fontsize=fs, color=fg_color, transform=ax.transAxes)
         t = ax.text(x, y, fullTitleText,
                     va='center', ha='left', fontsize=fs, color=fg_color,
                     transform=ax.transAxes)
-        t.set_path_effects([path_effects.Stroke(linewidth=borderLW, foreground=bg_color),
+        t.set_path_effects([path_effects.Stroke(linewidth=borderLW,
+                                                foreground=bg_color),
                            path_effects.Normal()])
         y -= rh #*1.5
 
@@ -253,25 +346,40 @@ def plotGaussianParams(ax, fitDict, x0, y0, fg_color='k', bg_color='w',
             subscr = ''
         else:
             subscr = r'_{' + str(g_n+1) + r'}'
-        t = ax.text(x,y,r'$A'+subscr+r'$', va='center', ha='left', fontsize=fs, color=fg_color, transform=ax.transAxes)
-        t.set_path_effects([path_effects.Stroke(linewidth=borderLW, foreground=bg_color),
+        t = ax.text(x,y,r'$A'+subscr+r'$', va='center', ha='left',
+                    fontsize=fs, color=fg_color, transform=ax.transAxes)
+        t.set_path_effects([path_effects.Stroke(linewidth=borderLW,
+                                                foreground=bg_color),
                            path_effects.Normal()])
-        t = ax.text(x+tw,y,r'$'+numFmt(A,keepAllSigFigs=1)+r'$', va='center', ha='right', fontsize=fs, color=fg_color, transform=ax.transAxes)
-        t.set_path_effects([path_effects.Stroke(linewidth=borderLW, foreground=bg_color),
-                           path_effects.Normal()])
-        y -= rh
-        t = ax.text(x,y, r'$\mu'+subscr+r'$', va='center', ha='left', fontsize=fs, color=fg_color, transform=ax.transAxes)
-        t.set_path_effects([path_effects.Stroke(linewidth=borderLW, foreground=bg_color),
-                           path_effects.Normal()])
-        t = ax.text(x+tw,y, r'$'+numFmt(mu,keepAllSigFigs=1)+r'$', va='center', ha='right', fontsize=fs, color=fg_color, transform=ax.transAxes)
-        t.set_path_effects([path_effects.Stroke(linewidth=borderLW, foreground=bg_color),
+        t = ax.text(x+tw,y,r'$'+numFmt(A,keepAllSigFigs=1)+r'$',
+                    va='center', ha='right', fontsize=fs, color=fg_color,
+                    transform=ax.transAxes)
+        t.set_path_effects([path_effects.Stroke(linewidth=borderLW,
+                                                foreground=bg_color),
                            path_effects.Normal()])
         y -= rh
-        t = ax.text(x,y, r'$\sigma'+subscr+r'$', va='center', ha='left', fontsize=fs, color=fg_color, transform=ax.transAxes)
-        t.set_path_effects([path_effects.Stroke(linewidth=borderLW, foreground=bg_color),
+        t = ax.text(x,y, r'$\mu'+subscr+r'$', va='center', ha='left',
+                    fontsize=fs, color=fg_color, transform=ax.transAxes)
+        t.set_path_effects([path_effects.Stroke(linewidth=borderLW,
+                                                foreground=bg_color),
                            path_effects.Normal()])
-        t = ax.text(x+tw,y, r'$'+numFmt(sigma,keepAllSigFigs=1)+r'$', va='center', ha='right', fontsize=fs, color=fg_color, transform=ax.transAxes)
-        t.set_path_effects([path_effects.Stroke(linewidth=borderLW, foreground=bg_color),
+        t = ax.text(x+tw,y, r'$'+numFmt(mu,keepAllSigFigs=1)+r'$',
+                    va='center', ha='right', fontsize=fs, color=fg_color,
+                    transform=ax.transAxes)
+        t.set_path_effects([path_effects.Stroke(linewidth=borderLW,
+                                                foreground=bg_color),
+                           path_effects.Normal()])
+        y -= rh
+        t = ax.text(x,y, r'$\sigma'+subscr+r'$', va='center', ha='left',
+                    fontsize=fs, color=fg_color, transform=ax.transAxes)
+        t.set_path_effects([path_effects.Stroke(linewidth=borderLW,
+                                                foreground=bg_color),
+                           path_effects.Normal()])
+        t = ax.text(x+tw,y, r'$'+numFmt(sigma,keepAllSigFigs=1)+r'$',
+                    va='center', ha='right', fontsize=fs, color=fg_color,
+                    transform=ax.transAxes)
+        t.set_path_effects([path_effects.Stroke(linewidth=borderLW,
+                                                foreground=bg_color),
                            path_effects.Normal()])
         y -= rh*1.5
 
@@ -323,6 +431,7 @@ def stepHist(bin_edges, y, yerr=None,
 
     # Populate the y-errors
     if yerr is not None:
+        yerr = np.squeeze(yerr)
         if np.isscalar(yerr[0]):
             yerr_low = [-e for e in yerr]
             yerr_high = yerr
@@ -360,7 +469,7 @@ def stepHist(bin_edges, y, yerr=None,
     if yerr is not None:
         custom_hatch = False
         if 'hatch' in eband_kwargs:
-            hatch_kwargs = copy.deepcopy(eband_kwargs)
+            hatch_kwargs = deepcopy(eband_kwargs)
             hatch_kwargs['facecolor'] = (1,1,1,0)
             eband_kwargs['hatch'] = None
             custom_hatch = True
@@ -387,10 +496,11 @@ def stepHist(bin_edges, y, yerr=None,
         err_plt.set_edgecolor(ep_edgecolor)
         err_plt.set_linewidth(nl_lw*0.5)
     
-        hatch_plt.set_color(eband_kwargs['edgecolor'])
-        hatch_plt.set_facecolor((1,1,1,0))
-        hatch_plt.set_edgecolor(eband_kwargs['edgecolor'])
-        hatch_plt.set_linewidth(nl_lw*0.5)
+        if custom_hatch:
+            hatch_plt.set_color(eband_kwargs['edgecolor'])
+            hatch_plt.set_facecolor((1,1,1,0))
+            hatch_plt.set_edgecolor(eband_kwargs['edgecolor'])
+            hatch_plt.set_linewidth(nl_lw*0.5)
     return ax, nom_lines, err_plt
 
 
