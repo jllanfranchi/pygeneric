@@ -19,12 +19,12 @@ LIGHT_BLUE = (0.4, 0.4, 0.8)
 LIGHT_RED =  (0.8, 0.4, 0.4)
 
 
-'''
+"""
 Use the following as:
 #mpl.rc('axes', color_cycle=colorCycleOrthog)
 source: http://stackoverflow.com/questions/470690/how-to-automatically-generate-n-distinct-colors
 ... but modified somewhat from that!
-'''
+"""
 colorCycleOrthog = (
     '#000000', #  0  Black
     '#803E75', #  2  Strong Purple
@@ -140,7 +140,7 @@ def plotColorCycle(color_cycle=colorCycleOrthog):
     f = plt.figure(333)
     clf()
     ax = f.add_subplot(111)
-    [ax.plot(x,np.cos(x-2*pi/N*n), lw=3, label=format(n,'2d')+': '+color_cycle[n][1:],color=color_cycle[n]) for n in range(N)]
+    [ax.plot(x,np.cos(x-2*np.pi/N*n), lw=3, label=format(n,'2d')+': '+color_cycle[n][1:],color=color_cycle[n]) for n in range(N)]
     plt.legend(loc='center right')
     ax.set_xlim([0, 8.2])
     ax.set_ylim([-1.1, 1.1])
@@ -170,21 +170,14 @@ def rugplot(a, y0, dy, ax, **kwargs):
     return ax.plot([a,a], [y0, y0+dy], **kwargs)
 
 
-def peakInfo(xdata, ydata):
-    maxvalind = np.argmax(ydata)
-    maxx = xdata[maxvalind]
-    #halfPower = 
-    halfInd = find(ydata < halfPower)
-
-
 def onpick_peakfind(event):
-    '''Use this by:
+    """Use this by:
         >> fig = figure(1)
         >> ax = axis(111)
         >> line, = ax.plot(x,y, picker=5)
         >> fig.canvas.mpl_connect('pick_event', onpick_peakfind)
 
-    '''
+    """
     print event, event.canvas
 
     thisline = event.artist
@@ -511,7 +504,8 @@ def removeBorder(axes=None, top=False, right=False, left=True, bottom=True):
     """
     Minimize chartjunk by stripping out unnecessary plot borders and axis ticks
     
-    The top/right/left/bottom keywords toggle whether the corresponding plot border is drawn
+    The top/right/left/bottom keywords toggle whether the corresponding plot
+    border is drawn
 
     from ChrisBeaumont,
         https://github.com/cs109/content/blob/master/README.md
@@ -538,7 +532,7 @@ def removeBorder(axes=None, top=False, right=False, left=True, bottom=True):
 
 
 def findRenderer(fig):
-    '''From http://stackoverflow.com/questions/22667224/matplotlib-get-text-bounding-box-independent-of-backend'''
+    """From http://stackoverflow.com/questions/22667224/matplotlib-get-text-bounding-box-independent-of-backend"""
     if hasattr(fig.canvas, "get_renderer"):
         #Some backends, such as TkAgg, have the get_renderer method, which 
         #makes this easy.
