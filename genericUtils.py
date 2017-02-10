@@ -190,9 +190,9 @@ class DictDiffer(object):
         self.set_current, self.set_past = set(current_dict.keys()), set(past_dict.keys())
         self.intersect = self.set_current.intersection(self.set_past)
     def added(self):
-        return self.set_current - self.intersect 
+        return self.set_current - self.intersect
     def removed(self):
-        return self.set_past - self.intersect 
+        return self.set_past - self.intersect
     def changed(self):
         return set(o for o in self.intersect if self.past_dict[o] != self.current_dict[o])
     def unchanged(self):
@@ -205,8 +205,8 @@ def expandPath(path):
 
 def absPath(path):
     return os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
-    
-    
+
+
 def mkdir(d, mode=0750):
     try:
         os.makedirs(os.path.expandvars(os.path.expanduser(d)), mode=mode)
@@ -223,7 +223,7 @@ def timediffstamp(dt_sec, hms_always=False):
         dt_sec = -dt_sec
     else:
         sign = ''
-    
+
     r = dt_sec % 3600
     h = int((dt_sec - r)/3600)
     s = r % 60
@@ -233,7 +233,7 @@ def timediffstamp(dt_sec, hms_always=False):
         strdt += format(h, '02d') + ':'
     if hms_always or h != 0 or m != 0:
         strdt += format(m, '02d') + ':'
-    
+
     if float(s) == int(s):
         s = int(s)
         if len(strdt) > 0:
@@ -250,7 +250,7 @@ def timediffstamp(dt_sec, hms_always=False):
         strdt += format(s, s_fmt)
     else:
         strdt += format(s, s_fmt) + ' sec'
-    
+
     return sign + strdt
 
 
@@ -303,14 +303,14 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
 #   for the internationalized version below
 #numeric_rex = re.compile(r'([0-9]+)')
 #def numericSortFn(s):
-#    
+#
 #
 ## The code extended with suitable renamings:
 #spec_dict = {'Å':'A', 'Ä':'A'}
 #
 #def spec_order(s):
 #    return ''.join([spec_dict.get(ch, ch) for ch in s])
-#    
+#
 #def trynum(s):
 #    try:
 #        return float(s)
@@ -330,10 +330,10 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
 
 #-- See http://nedbatchelder.com/blog/200712/human_sorting.html#comments, comment by "Andre Bogus"
 def nsort(l):
-    return sorted(l, key=lambda a:zip(re.split("(\\d+)", a)[0::2], map(int, re.split("(\\d+)", a)[1::2])))
+    return sorted(l, key=lambda a: zip(re.split("(\\d+)", a)[0::2], map(int, re.split("(\\d+)", a)[1::2])))
 
 #-- ... and comment by "Py User":
-#def nsort_ci(l) return sorted(l, key=lambda a.lower()):zip(re.split("(\\d+)", a)[0::2], map(int, re.split("(\\d+)", a)[1::2]))) 
+#def nsort_ci(l) return sorted(l, key=lambda a.lower()):zip(re.split("(\\d+)", a)[0::2], map(int, re.split("(\\d+)", a)[1::2])))
 
 
 #-- Recursive w/ ordering reference: http://stackoverflow.com/questions/18282370/python-os-walk-what-order
@@ -343,7 +343,7 @@ def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
     http://stackoverflow.com/questions/18282370/python-os-walk-what-order'''
     if isinstance(regex, basestring):
         regex = re.compile(regex)
-    
+
     if regex is None:
         if fname is None:
             def validfilefunc(fn):
@@ -413,7 +413,7 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
        gotten by the function via *args or **kwargs). Hash will be based ONLY
        upon values passed into the name-specified arguments (found via
        inspect.getargspec(f).args).
-       
+
        NOTE: A "hash key" is named via the following convention:
             (func name)_(func src hash)_(named args hash)
        which has the weakenesses that
@@ -423,14 +423,14 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
           differences will hash differently
        c. Only named arguments are hashed
        d. Hashing of args is via cPickle binary string; objects or sub-objects
-          that don't hash nicely will 
+          that don't hash nicely will
        e. Memory issues or speed issues could arise if arguments are large
           objects (even if passed by reference, since cPickle will serielize
           the entire object if possible)
-    
+
     2. Look in memory cache for the hash key; if it's there, simply return (a
        deepcopy of) the value there
-    
+
     3. If hash key is not in memory cache, look in the first-specified
        directory among {diskcache_dir, $PYTHON_CACHE, $PWD} for a file named
        with the hash key
@@ -439,7 +439,7 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
        value to the local cache, and return this.
        NOTE: If $PYTHON_CACHE is not specified, creates a .pycache directory in
        the current-working directory
-    
+
     4. If the hash key exists neither in the memory cache nor in the disk cache
        dir, run the function with all arguments (not just named args, so
        including *args and **kwargs), and then store the result in the memory cache AND
@@ -453,12 +453,12 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
     def decorator(func):
         if not DC_ENABLED and not MC_ENABLED:
             return func
-        
+
         # Create memory cache as a dictionary
         memcache = func.memcache = {}
         diskcache_enabled = func.diskcache_enabled = DC_ENABLED
         memcache_enabled = func.memcache_enabled = MC_ENABLED
-        
+
         # Define path to, and create if necessary, cache directory on disk
         if diskcache_enabled:
             if DCD:
@@ -484,35 +484,34 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
             if not os.path.isdir(diskcache_dir):
                 wstderr('Cache path \'' + diskcache_dir + '\' does not point to a valid directory. Disk caching disabled.\n')
                 diskcache_enabled = func.diskcache_enabled = False
-        
+
         # Retrieve info about func & its args
         func_name = func.func_name
         func_src = inspect.getsource(func)
-        
+
         func_hash = func.func_hash = '_'.join((func_name, my_hash(func_src)))
         argspec   = func.argspec   = inspect.getargspec(func)
-        
+
         del func_name, func_src
-        
+
         @functools.wraps(func)
         def memoizer(*args, **kwargs):
             force_execution = False
             if kwargs.has_key('MEMO_FORCE_EXECUTION') and kwargs['MEMO_FORCE_EXECUTION']:
                 force_execution = True
-            
+
             #
             # Stringify only the args defined by name in the function's arg spec...
             #
-            
+
             # Populate default arguments & their values. May be overwritten below.
             named_args = {}
             if argspec.defaults:
-                named_args = {arg: dflt for (arg,dflt)in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)}
-            
+                named_args = {arg: dflt for arg, dflt in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)}
+
             tmp_argspec_args = copy.deepcopy(argspec.args)
             #print tmp_argspec_args, len(tmp_argspec_args), len(args), len(kwargs)
             argsspecd_n = 0
-            ser = ''
             for arg in args:
                 if len(tmp_argspec_args) == 0:
                     break
@@ -522,12 +521,12 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
             for refarg in tmp_argspec_args:
                 if refarg in kwargs:
                     #print '    populating refarg: ', refarg
-                    named_args[refarg] = kwargs[refarg] 
+                    named_args[refarg] = kwargs[refarg]
                     argsspecd_n += 1
             #print ' ** argsspecd_n:', argsspecd_n
             # TODO: set_encoder_options('simplejson', sort_keys=True, indent=2)
             # ... or use faster backend, like ujson? but does that sort keys?
-            
+
             requires_recompute = False
             args_bstr = b''
             for arg in sorted(named_args.keys()):
@@ -542,28 +541,32 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
                         requires_recompute = True
                         break
                 args_bstr += arg + arg_bstr
-            
+
             if requires_recompute:
                 return func(*args, **kwargs)
-            
+
             del named_args
             arg_hash = my_hash(args_bstr)
             #print 'func_hash:', func_hash, 'arg_hash:', arg_hash
             del args_bstr
-            
+
             key = '_'.join((func_hash, arg_hash))
             fpath = os.path.join(diskcache_dir, key)
-            
+
             if not(memcache_enabled) or (memcache_enabled and (key not in memcache)) or force_execution:
                 #... need to check disk cache, or re-run the function
                 in_diskcache = False
                 if not force_execution and diskcache_enabled:
                     if os.path.exists(fpath):
                         f = file(fpath, 'rb')
-                        try:     ret = cPickle.load(f)
-                        except:  pass
-                        else:    in_diskcache = True
-                        finally: f.close()
+                        try:
+                            ret = cPickle.load(f)
+                        except:
+                            pass
+                        else:
+                            in_diskcache = True
+                        finally:
+                            f.close()
                 if not in_diskcache:
                     ret = func(*args, **kwargs)
                     if diskcache_enabled:
@@ -606,10 +609,11 @@ def num2floatOrInt(num):
 
 
 def isint(num):
-    '''Test whether a number is *functionally* an integer'''
-    if int(num) == float(num):
-        return True
-    return False
+    """Test whether a number is *functionally* an integer"""
+    try:
+        int(num) == float(num)
+    except ValueError:
+        return False
 
 
 def hrgroup2list(hrgroup):
@@ -624,7 +628,7 @@ def hrgroup2list(hrgroup):
         return [range_start]
     range_stop = num2floatOrInt(numstrs[1])
     step = 1
-    if not(numstrs[2] is None):
+    if numstrs[2] is not None:
         step = num2floatOrInt(numstrs[2])
     all_ints = isint(range_start) and isint(step)
     # Make an *INCLUSIVE* list
@@ -661,6 +665,7 @@ def hrlist_formatter(start, end, step):
 def list2hrlist(lst):
     if np.isscalar(lst):
         lst = [lst]
+    lst = sorted(lst)
     TOL = np.finfo(float).resolution
     n = len(lst)
     result = []
@@ -671,7 +676,7 @@ def list2hrlist(lst):
             result.append(str(lst[scan]))
             scan += 1
             continue
-        
+
         for j in xrange(scan+2, n-1):
             if not np.isclose(lst[j+1] - lst[j], step, rtol=TOL):
                 result.append(hrlist_formatter(lst[scan], lst[j], step))
@@ -680,22 +685,22 @@ def list2hrlist(lst):
         else:
             result.append(hrlist_formatter(lst[scan], lst[-1], step))
             return ','.join(result)
-    
+
     if n - scan == 1:
         result.append(str(lst[scan]))
     elif n - scan == 2:
         result.append(','.join(itertools.imap(str, lst[scan:])))
-    
+
     return ','.join(result)
 
 
 def hrbool2bool(s):
-    s = str(s)
-    if s.lower() in ['t','true','1','yes','one']:
+    s = str(s).strip()
+    if s.lower() in ['t', 'true', '1', 'yes', 'one']:
         return True
-    elif s.lower() in ['f','false','0','no','zero']:
+    elif s.lower() in ['f', 'false', '0', 'no', 'zero']:
         return False
-    raise Exception('Could not parse input into bool: ' + s)
+    raise ValueError('Could not parse input into bool: ' + s)
 
 
 def two_bad_seeds(badseed1, badseed2):
@@ -837,7 +842,7 @@ def linExtrap(x, y, xmin, xmax, const_low=False, const_high=False):
         y = np.concatenate((y, [y_new]))
     return interpolate.interp1d(x=x, y=y, kind='linear', copy=False,
                                 bounds_error=True, fill_value=np.nan,
-                                assume_sorted=True) 
+                                assume_sorted=True)
 
 
 def rangeBelowThresh(x, y, y_thresh):
@@ -910,7 +915,7 @@ def makeFuncMappable(func, *args, **kwargs):
     '''Generally, `map` doesn't take scalar arguments (Pandas `map` is more
     restrictive, but even Python's `map` is restricted to all arguments having
     same length as the first argument -- which is the iterable being mapped).
-    
+
     This function returns a version of the passed `func` that only takes one
     argument, running the original `func` with that argument and all other args
     and kwargs specified to makeFuncMappable.

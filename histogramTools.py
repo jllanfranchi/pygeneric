@@ -420,8 +420,7 @@ def medianPlot2D(x, y, z, xbins=None, ybins=None):
         pass
 
 
-def stepHist(bin_edges, y, yerr=None,
-             plt_lr_edges=False, lr_edge_val=0,
+def stepHist(bin_edges, y, yerr=None, plt_lr_edges=False, lr_edge_val=0,
              ax=None, eband_kwargs={}, **kwargs):
     x = np.array(zip(bin_edges, bin_edges)).flatten()
     y = np.array(
