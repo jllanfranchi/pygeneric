@@ -13,8 +13,14 @@ import xxhash
 import numpy as np
 from scipy import interpolate, stats
 
+#try:
 from pisa.utils.log import logging, set_verbosity
-import pisa.utils.fileio as fileio
+#except ImportError:
+#    logging = wstdout
+try:
+    import pisa.utils.fileio as fileio
+except:
+    pass
 
 
 sigma_or_pct_re = re.compile(r'(?P<val>[0-9]+)(?P<unit>sigma|sig|pct|percent|%)')
@@ -53,10 +59,50 @@ def confIntvl2chi2(ci, dof):
     return stats.chi2.ppf(ci, dof)
 
 def sigma2chi2(sigma, dof):
-    return confIntvl2chi2(sigma2confIntvl(sigma), dof)
+    return sigma**2 #confIntvl2chi2(sigma2confIntvl(sigma), dof)
 
 def pct2chi2(pct, dof):
     return confIntvl2chi2(pct2confIntvl(pct), dof)
+
+def jeffreys_interval(x_successes, n_trials, conf):
+    """Compute and return the Jeffreys interval.
+
+    Parameters
+    ----------
+    x_successes : numeric
+        Number of successes
+    n_trials
+        Number of trials
+    conf
+        Confidence at which to compute the interval, e.g. 0.682689 for 1-sigma.
+        Cutoff is applied at 0.5 due to possible buggy behavior at lower
+        values.
+
+    Returns
+    -------
+    lower_bound, upper_bound
+
+    Notes
+    -----
+    For details, see following Wikipedia entry (and contained references):
+    https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval
+
+    At present, picking low `conf` might yield erroneous results
+    (i.e., an interval that does not include x_successes/n_trials).
+    """
+    assert conf > 0.5, 'Due to lack of understanding, `conf`' \
+            ' is currently limited to be greater than 0.5.'
+    lower_bound, upper_bound = stats.beta.interval(
+        conf,
+        x_successes + 0.5,
+        n_trials - x_successes + 0.5
+    )
+    if x_successes == 0:
+        lower_bound = 0
+    if x_successes == n_trials:
+        upper_bound = n_trials
+    return lower_bound, upper_bound
+
 
 # NOTE: See pyDOE for regular Latin hypercube sampling
 
@@ -588,12 +634,13 @@ def hrgroup2list(hrgroup):
     return lst
 
 
+ws_re = re.compile(r'\s')
 def hrlist2list(hrlst):
-    groups = re.split(r'[,; _]+', hrlst)
+    groups = re.split(r'[,; _]+', ws_re.sub('', hrlst))
     lst = []
     if len(groups) == 0:
         return lst
-    [ lst.extend(hrgroup2list(g)) for g in groups ]
+    [lst.extend(hrgroup2list(g)) for g in groups]
     return lst
 
 
@@ -731,7 +778,8 @@ def samplesFilename(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5, prefix
 
 
 # Retrieve random sampling params in range [0, 1], 3-dim parameter cube
-def sampleHypercube(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5, rdata_dir='~/cowen/data/random'):
+def sampleHypercube(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5,
+                    rdata_dir='~/cowen/data/random'):
     '''Load (if file exists) or generate samples from within hypercube using
     Latin hypercube sampling
 
