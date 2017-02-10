@@ -8,15 +8,26 @@ import functools
 import inspect
 import copy
 import cPickle
-import jsonpickle
-import xxhash
 import numpy as np
 from scipy import interpolate, stats
 
-#try:
-from pisa.utils.log import logging, set_verbosity
-#except ImportError:
-#    logging = wstdout
+try:
+    from pisa.utils.log import logging
+except ImportError:
+    class Logging(object):
+        def __init__(self):
+            pass
+        def info(self, s):
+            sys.stdout.write('[ Info    ] %s\n' % s)
+            sys.stdout.flush()
+        def warn(self, s):
+            sys.stderr.write('[ Warning ] %s\n' % s)
+            sys.stderr.flush()
+        def error(self, s):
+            sys.stderr.write('[ Error   ] %s\n' % s)
+            sys.stderr.flush()
+    logging = Logging()
+
 try:
     import pisa.utils.fileio as fileio
 except:
@@ -107,7 +118,7 @@ def jeffreys_interval(x_successes, n_trials, conf):
 # NOTE: See pyDOE for regular Latin hypercube sampling
 
 #def orthogonalSample(dims, divs, subdivs, seed=1439):
-#    '''
+#    """
 #    dims
 #        Number of dimensions of parameter hypercube
 #
@@ -125,7 +136,7 @@ def jeffreys_interval(x_successes, n_trials, conf):
 #
 #    seed
 #        Random seed to set prior to generating the samples
-#    '''
+#    """
 #    np.random.seed(seed)
 
 
@@ -135,12 +146,13 @@ def trace(frame, event, arg):
 
 
 def my_hash(s):
+    import xxhash
     return xxhash.xxh64(s).hexdigest()
 
 
 def cmp_to_key(mycmp):
-    '''Convert a cmp= function into a key= function.
-    wiki.python.org/moin/HowTo/Sorting'''
+    """Convert a cmp= function into a key= function.
+    wiki.python.org/moin/HowTo/Sorting"""
     class K(object):
         def __init__(self, obj, *args):
             self.obj = obj
@@ -207,7 +219,11 @@ def absPath(path):
     return os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
 
 
-def mkdir(d, mode=0750):
+def mkdir(d, mode=0750, warn=True):
+    d = os.path.expandvars(os.path.expanduser(d))
+    if warn and os.path.isdir(d):
+        logging.warn('Directory %s already exists.' % d)
+
     try:
         os.makedirs(os.path.expandvars(os.path.expanduser(d)), mode=mode)
     except OSError as err:
@@ -255,7 +271,7 @@ def timediffstamp(dt_sec, hms_always=False):
 
 
 def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
-    '''Simple utility to print out a time, date, or time&date stamp,
+    """Simple utility to print out a time, date, or time&date stamp,
     with some reconfigurability for commonly-used options. Default is in
     ISO8601 format without colons separating hours, min, and sec to avoid
     file naming issues.
@@ -267,7 +283,7 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
         utc        print time/date in UTC (default: False)
         winsafe    omit colons between hours/minutes (default: False)
 
-    '''
+    """
     if utc:
         timeTuple = time.gmtime()
     else:
@@ -339,8 +355,8 @@ def nsort(l):
 #-- Recursive w/ ordering reference: http://stackoverflow.com/questions/18282370/python-os-walk-what-order
 def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
               file_sorter=nsort):
-    '''Recursive w/ ordering code thanks to
-    http://stackoverflow.com/questions/18282370/python-os-walk-what-order'''
+    """Recursive w/ ordering code thanks to
+    http://stackoverflow.com/questions/18282370/python-os-walk-what-order"""
     if isinstance(regex, basestring):
         regex = re.compile(regex)
 
@@ -408,7 +424,7 @@ def memoize_volatile(obj):
 # TODO: Make serialization method, compression, etc. optional
 # TODO: Add .pkl{protocol ver} extension to pickled files (is this even a good idea?)
 def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CACHE', diskcache_enabled=True, memcache_enabled=True):
-    '''
+    """
     1. Assume any ACTUALLY important arguments are defined with names (i.e., NOT
        gotten by the function via *args or **kwargs). Hash will be based ONLY
        upon values passed into the name-specified arguments (found via
@@ -445,7 +461,8 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
        including *args and **kwargs), and then store the result in the memory cache AND
        in a file named with the hash key in the first-specified dir among
        {diskcache_dir, $PYTHON_CACHE, $PWD}).
-    '''
+    """
+    import jsonpickle
     DCD = diskcache_dir
     CACHE_VARNAME = diskcache_dir_envvar
     DC_ENABLED = diskcache_enabled
@@ -614,6 +631,7 @@ def isint(num):
         int(num) == float(num)
     except ValueError:
         return False
+    return True
 
 
 def hrgroup2list(hrgroup):
@@ -730,9 +748,9 @@ def two_bad_seeds(badseed1, badseed2):
 
 
 def n_bad_seeds(*args):
-    '''
+    """
     All seeds must be integers in the range [0, 2**32)
-    '''
+    """
     np.random.seed(args[0])
     for n, badseed in enumerate(args):
         next_seed_set = np.random.randint(0, 2**32, badseed+1)
@@ -785,11 +803,11 @@ def samplesFilename(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5, prefix
 # Retrieve random sampling params in range [0, 1], 3-dim parameter cube
 def sampleHypercube(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5,
                     rdata_dir='~/cowen/data/random'):
-    '''Load (if file exists) or generate samples from within hypercube using
+    """Load (if file exists) or generate samples from within hypercube using
     Latin hypercube sampling
 
     Requires pyDOE to generate new samples.
-    '''
+    """
     fname = samplesFilename(n_dim=n_dim,
                             n_samp=n_samp,
                             rand_set_id=rand_set_id,
@@ -820,12 +838,12 @@ def linExtrap(x, y, xmin, xmax, const_low=False, const_high=False):
     sort_ind = np.argsort(x)
     x = x[sort_ind]
     y = y[sort_ind]
-    '''
+    """
     set x0 = 0 and y0 = 0, then y' = m*x'; y' = y-y0, x' = x-x0
     y-y0 = m*(x-x0)
     y = m*(x-x0) + y0
     y = (y1-y0)/(x1-x0) * (x-x0) + y0
-    '''
+    """
     if xmin < min(x):
         if const_low:
             y_new = y[0]
@@ -846,13 +864,13 @@ def linExtrap(x, y, xmin, xmax, const_low=False, const_high=False):
 
 
 def rangeBelowThresh(x, y, y_thresh):
-    '''Simplistic function that linearly interpolates between points to find
+    """Simplistic function that linearly interpolates between points to find
     x-bounds of regions where y drops below y_thresh.
 
     Note: this is not robust to things like repeated zeros; y data must
     straddle zero OR start or end below zero in order for this to give sensible
     results.
-    '''
+    """
     # Convert to numpy arrays
     x = np.array(x)
     y = np.array(y)
@@ -912,14 +930,14 @@ def home(d=None):
 
 
 def makeFuncMappable(func, *args, **kwargs):
-    '''Generally, `map` doesn't take scalar arguments (Pandas `map` is more
+    """Generally, `map` doesn't take scalar arguments (Pandas `map` is more
     restrictive, but even Python's `map` is restricted to all arguments having
     same length as the first argument -- which is the iterable being mapped).
 
     This function returns a version of the passed `func` that only takes one
     argument, running the original `func` with that argument and all other args
     and kwargs specified to makeFuncMappable.
-    '''
+    """
     def mappableFunc(arg0):
         return func(arg0, *args, **kwargs)
     return mappableFunc
