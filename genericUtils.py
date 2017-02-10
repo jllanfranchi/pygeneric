@@ -8,6 +8,8 @@ import functools
 import inspect
 import copy
 import cPickle
+import multiprocessing
+
 import numpy as np
 from scipy import interpolate, stats
 
@@ -184,13 +186,12 @@ def genericTester(cases, transform):
     assert np.all(passed)
 
 
-"""
-A dictionary difference calculator
-Originally posted as:
-http://stackoverflow.com/questions/1165352/fast-comparison-between-two-python-dictionary/1165552#1165552
-"""
 class DictDiffer(object):
     """
+    A dictionary difference calculator
+    Originally posted as:
+    http://stackoverflow.com/questions/1165352/fast-comparison-between-two-python-dictionary/1165552#1165552
+
     Calculate the difference between two dictionaries as:
     (1) items added
     (2) items removed
@@ -929,6 +930,12 @@ def home(d=None):
     return os.path.join(os.path.expanduser('~'), d)
 
 
+def pdSafe(s):
+    s = s.translate(None, '\\/ ?!@#$%^&*()-+=\`~|][{}<>,')
+    s = s.replace('.', '_')
+    return s
+
+
 def makeFuncMappable(func, *args, **kwargs):
     """Generally, `map` doesn't take scalar arguments (Pandas `map` is more
     restrictive, but even Python's `map` is restricted to all arguments having
@@ -941,3 +948,16 @@ def makeFuncMappable(func, *args, **kwargs):
     def mappableFunc(arg0):
         return func(arg0, *args, **kwargs)
     return mappableFunc
+
+
+def applyParallel(groupedDF, func, cpucount=None, chunksize=None):
+    """User Pietro Battiston's solution from
+    http://stackoverflow.com/questions/26187759/parallelize-apply-after-pandas-groupby
+    """
+    import pandas as pd
+    if cpucount is None:
+        cpucount = multiprocessing.cpu_count()
+    #with multiprocessing.Pool(cpucount) as pool:
+    pool = multiprocessing.Pool(cpucount)
+    ret_list = pool.imap(func, [group for name, group in groupedDF], chunksize=chunksize)
+    return pd.concat(ret_list)
