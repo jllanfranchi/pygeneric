@@ -1,17 +1,23 @@
 # -*- coding: iso-8859-15 -*-
+"""
+My collected generic utilities (whether coded by me or others)
+"""
+
 
 from __future__ import division
 
-import re, os, sys, time
-import itertools
-import functools
-import inspect
 import copy
 import cPickle
+import functools
+import inspect
+import itertools
 import multiprocessing
+import os
+import re
+import sys
+import time
 
 import numpy as np
-from scipy import interpolate, stats
 
 try:
     from pisa.utils.log import logging
@@ -19,63 +25,102 @@ except ImportError:
     class Logging(object):
         def __init__(self):
             pass
-        def info(self, s):
+
+        @staticmethod
+        def info(s):
             sys.stdout.write('[ Info    ] %s\n' % s)
             sys.stdout.flush()
-        def warn(self, s):
+
+        @staticmethod
+        def warn(s):
             sys.stderr.write('[ Warning ] %s\n' % s)
             sys.stderr.flush()
-        def error(self, s):
+
+        @staticmethod
+        def error(s):
             sys.stderr.write('[ Error   ] %s\n' % s)
             sys.stderr.flush()
     logging = Logging()
 
 try:
     import pisa.utils.fileio as fileio
-except:
+except ImportError:
     pass
 
 
-sigma_or_pct_re = re.compile(r'(?P<val>[0-9]+)(?P<unit>sigma|sig|pct|percent|%)')
+def chown_and_chmod(f, mode, uid=-1, gid=-1):
+    """Change group and permissions of a file handle or file path
+
+    Parameters
+    ----------
+    f : file handle or string
+    mode : binary
+    uid : int
+    gid : int
+        Group ID. See `grp` module for how to obtain group IDs.
+
+    """
+    if isinstance(f, file):
+        os.fchown(f.fileno(), uid, gid)
+        os.fchmod(f.fileno(), mode)
+    elif isinstance(f, basestring):
+        os.chown(f, uid, gid)
+        os.chmod(f, mode)
+    else:
+        raise TypeError('Unhandled type for arg `f`: %s' % type(f))
+
+
+SIGMA_OR_PCT_RE = re.compile(r'(?P<val>[0-9]+)(?P<unit>sigma|sig|pct|percent|%)')
 def sigmaOrPct2ConfIntvl(s):
-    md = sigma_or_pct_re.match(s.lower()).groupdict()
+    md = SIGMA_OR_PCT_RE.match(s.lower()).groupdict()
     if md['unit'] in ['pct', 'percent', '%']:
         return pct2confIntvl(float(md['val'])/100.)
     if md['unit'] in ['sig', 'sigma']:
         return sigma2confIntvl(float(md['val']))
     raise ValueError('Could not parse string into sigma or percent: "%s"' % s)
 
+
 def sigmaOrPct2chi2(s, dof):
-    md = sigma_or_pct_re.match(s.lower()).groupdict()
+    md = SIGMA_OR_PCT_RE.match(s.lower()).groupdict()
     if md['unit'] in ['pct', 'percent', '%']:
         return pct2chi2(float(md['val'])/100., dof=dof)
     if md['unit'] in ['sig', 'sigma']:
         return sigma2chi2(float(md['val']), dof=dof)
     raise ValueError('Could not parse string into sigma or percent: "%s"' % s)
 
+
 def sigma2confIntvl(s):
+    from scipy import stats
     if hasattr(s, '__len__'):
         s = np.array(s)
     return stats.chi2.cdf(s**2, 1)
 
+
 def pct2sigma(pct):
+    from scipy import stats
     if hasattr(pct, '__len__'):
         pct = np.array(pct)
     return np.sqrt(stats.chi2.ppf(pct, 1))
 
+
 def pct2confIntvl(pct):
     return sigma2confIntvl(pct2sigma(pct))
 
+
 def confIntvl2chi2(ci, dof):
+    from scipy import stats
     if hasattr(ci, '__len__'):
         ci = np.array(ci)
     return stats.chi2.ppf(ci, dof)
 
+
 def sigma2chi2(sigma, dof):
     return sigma**2 #confIntvl2chi2(sigma2confIntvl(sigma), dof)
 
+
 def pct2chi2(pct, dof):
     return confIntvl2chi2(pct2confIntvl(pct), dof)
+
 
 def jeffreys_interval(x_successes, n_trials, conf):
     """Compute and return the Jeffreys interval.
@@ -102,7 +147,9 @@ def jeffreys_interval(x_successes, n_trials, conf):
 
     At present, picking low `conf` might yield erroneous results
     (i.e., an interval that does not include x_successes/n_trials).
+
     """
+    from scipy import stats
     assert conf > 0.5, 'Due to lack of understanding, `conf`' \
             ' is currently limited to be greater than 0.5.'
     lower_bound, upper_bound = stats.beta.interval(
@@ -187,8 +234,8 @@ def genericTester(cases, transform):
 
 
 class DictDiffer(object):
-    """
-    A dictionary difference calculator
+    """Dictionary difference calculator
+
     Originally posted as:
     http://stackoverflow.com/questions/1165352/fast-comparison-between-two-python-dictionary/1165552#1165552
 
@@ -202,12 +249,16 @@ class DictDiffer(object):
         self.current_dict, self.past_dict = current_dict, past_dict
         self.set_current, self.set_past = set(current_dict.keys()), set(past_dict.keys())
         self.intersect = self.set_current.intersection(self.set_past)
+
     def added(self):
         return self.set_current - self.intersect
+
     def removed(self):
         return self.set_past - self.intersect
+
     def changed(self):
         return set(o for o in self.intersect if self.past_dict[o] != self.current_dict[o])
+
     def unchanged(self):
         return set(o for o in self.intersect if self.past_dict[o] == self.current_dict[o])
 
@@ -223,7 +274,7 @@ def absPath(path):
 def mkdir(d, mode=0750, warn=True):
     d = os.path.expandvars(os.path.expanduser(d))
     if warn and os.path.isdir(d):
-        logging.warn('Directory %s already exists.' % d)
+        logging.warn('Directory already exists: "%s"' % d)
 
     try:
         os.makedirs(os.path.expandvars(os.path.expanduser(d)), mode=mode)
@@ -231,7 +282,7 @@ def mkdir(d, mode=0750, warn=True):
         if err[0] != 17:
             raise err
     else:
-        logging.info('Created directory: ' + d + '\n')
+        logging.info('Created directory: "%s"' % d)
 
 
 def timediffstamp(dt_sec, hms_always=False):
@@ -271,30 +322,46 @@ def timediffstamp(dt_sec, hms_always=False):
     return sign + strdt
 
 
-def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
-    """Simple utility to print out a time, date, or time&date stamp,
-    with some reconfigurability for commonly-used options. Default is in
-    ISO8601 format without colons separating hours, min, and sec to avoid
-    file naming issues.
+def timestamp(at=None, d=True, t=True, tz=True, utc=False, winsafe=False,
+              t_sep='T'):
+    """Simple utility to print out a time, date, or time & date stamp,
+    with some reconfigurability for commonly-used options.
 
-    Options:
-        d          print date (default: True)
-        t          print time (default: True)
-        tz         print timezone offset from UTC (default: True)
-        utc        print time/date in UTC (default: False)
-        winsafe    omit colons between hours/minutes (default: False)
+    Default is in ISO8601 format in local time. Use winsafe mode to remove
+    colons separating hours, min, and sec to avoid file naming issues.
+
+    Parameters
+    ----------
+    at : None or int
+        Time in seconds for which to get the timestamp. If None, current time
+        is used.
+    d
+        print date (default: True)
+    t
+        print time (default: True)
+    tz
+        print timezone offset from UTC (default: True)
+    utc
+        print time/date in UTC (default: False)
+    winsafe
+        omit colons between hours/minutes (default: False)
+    t_sep
+        Separator between date and time (default: "T")
 
     """
+    if at is None:
+        at = time.time()
+
     if utc:
-        timeTuple = time.gmtime()
+        timeTuple = time.gmtime(at)
     else:
-        timeTuple = time.localtime()
+        timeTuple = time.localtime(at)
 
     dts = ""
     if d:
         dts += time.strftime("%Y-%m-%d", timeTuple)
         if t:
-            dts += "T"
+            dts += t_sep
     if t:
         if winsafe:
             dts += time.strftime("%H%M%S", timeTuple)
@@ -306,11 +373,11 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
                 if winsafe:
                     dts += time.strftime("+0000")
                 else:
-                    dts += time.strftime("+0000")
+                    dts += time.strftime("+00:00")
             else:
                 offset = time.strftime("%z")
                 if not winsafe:
-                    offset = offset[:-2:] + "" + offset[-2::]
+                    offset = offset[:-2] + ":" + offset[-2:]
                 dts += offset
     return dts
 
@@ -345,15 +412,21 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
 #    """
 #    l.sort(key=alphanum_key)
 
-#-- See http://nedbatchelder.com/blog/200712/human_sorting.html#comments, comment by "Andre Bogus"
 def nsort(l):
-    return sorted(l, key=lambda a: zip(re.split("(\\d+)", a)[0::2], map(int, re.split("(\\d+)", a)[1::2])))
+    """See http://nedbatchelder.com/blog/200712/human_sorting.html#comments,
+    comment by "Andre Bogus"
+
+    """
+    return sorted(
+        l,
+        key=lambda a: zip(re.split("(\\d+)", a)[0::2],
+                          [int(x) for x in re.split("(\\d+)", a)[1::2]])
+    )
 
 #-- ... and comment by "Py User":
 #def nsort_ci(l) return sorted(l, key=lambda a.lower()):zip(re.split("(\\d+)", a)[0::2], map(int, re.split("(\\d+)", a)[1::2])))
 
 
-#-- Recursive w/ ordering reference: http://stackoverflow.com/questions/18282370/python-os-walk-what-order
 def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
               file_sorter=nsort):
     """Recursive w/ ordering code thanks to
@@ -399,6 +472,7 @@ def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
             isValid, match = validfilefunc(basename)
             if isValid:
                 yield fullfilepath, basename, match
+
 
 def wstdout(x):
     sys.stdout.write(x)
@@ -464,6 +538,7 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
        {diskcache_dir, $PYTHON_CACHE, $PWD}).
     """
     import jsonpickle
+
     DCD = diskcache_dir
     CACHE_VARNAME = diskcache_dir_envvar
     DC_ENABLED = diskcache_enabled
@@ -508,7 +583,7 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
         func_src = inspect.getsource(func)
 
         func_hash = func.func_hash = '_'.join((func_name, my_hash(func_src)))
-        argspec   = func.argspec   = inspect.getargspec(func)
+        argspec = func.argspec = inspect.getargspec(func)
 
         del func_name, func_src
 
@@ -601,20 +676,20 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
 
 # This regex matches signed, unsigned, and scientific-notation (e.g. "1e10")
 # numbers.
-number_restr = r'((?:-|\+){0,1}[0-9.]+(?:e(?:-|\+)[0-9.]+){0,1})'
-number_re = re.compile(number_restr, re.IGNORECASE)
+NUMBER_RESTR = r'((?:-|\+){0,1}[0-9.]+(?:e(?:-|\+)[0-9.]+){0,1})'
+NUMBER_RE = re.compile(NUMBER_RESTR, re.IGNORECASE)
 
 # This regex
 # The starting number
 # Optional range, e.g., --10 (which means "to negative 10"); in my
 # interpretation, the "to" number should be *INCLUDED* in the list
 # If there's a range, optional stepsize, e.g., --10 (which means "to negative 10")
-hrgroup_restr = \
-        number_restr + \
-        r'(?:-' + number_restr + \
-        r'(?:\:' + number_restr + r'){0,1}' + \
+HRGROUP_RESTR = \
+        NUMBER_RESTR + \
+        r'(?:-' + NUMBER_RESTR + \
+        r'(?:\:' + NUMBER_RESTR + r'){0,1}' + \
         r'){0,1}'
-hrgroup_re = re.compile(hrgroup_restr, re.IGNORECASE)
+HRGROUP_RE = re.compile(HRGROUP_RESTR, re.IGNORECASE)
 
 
 def num2floatOrInt(num):
@@ -640,7 +715,7 @@ def hrgroup2list(hrgroup):
     hrgroup = ''.join(hrgroup.split())
     if (hrgroup is None) or (hrgroup == ''):
         return []
-    numstrs = hrgroup_re.match(hrgroup).groups()
+    numstrs = HRGROUP_RE.match(hrgroup).groups()
     range_start = num2floatOrInt(numstrs[0])
     # If no range is specified, just return the number
     if numstrs[1] is None:
@@ -657,9 +732,9 @@ def hrgroup2list(hrgroup):
     return lst
 
 
-ws_re = re.compile(r'\s')
+WS_RE = re.compile(r'\s')
 def hrlist2list(hrlst):
-    groups = re.split(r'[,; _]+', ws_re.sub('', hrlst))
+    groups = re.split(r'[,; _]+', WS_RE.sub('', hrlst))
     lst = []
     if len(groups) == 0:
         return lst
@@ -685,19 +760,19 @@ def list2hrlist(lst):
     if np.isscalar(lst):
         lst = [lst]
     lst = sorted(lst)
-    TOL = np.finfo(float).resolution
+    tol = np.finfo(np.float).resolution
     n = len(lst)
     result = []
     scan = 0
     while n - scan > 2:
         step = lst[scan + 1] - lst[scan]
-        if not np.isclose(lst[scan + 2] - lst[scan + 1], step, rtol=TOL):
+        if not np.isclose(lst[scan + 2] - lst[scan + 1], step, rtol=tol):
             result.append(str(lst[scan]))
             scan += 1
             continue
 
         for j in xrange(scan+2, n-1):
-            if not np.isclose(lst[j+1] - lst[j], step, rtol=TOL):
+            if not np.isclose(lst[j+1] - lst[j], step, rtol=tol):
                 result.append(hrlist_formatter(lst[scan], lst[j], step))
                 scan = j+1
                 break
@@ -728,14 +803,14 @@ def two_bad_seeds(badseed1, badseed2):
     # init generator with bad seed
     np.random.seed(badseed1)
     # blow through some states to increase entropy
-    np.random.randint(-1e9,1e9,1e5)
+    np.random.randint(-1e9, 1e9, 1e5)
     # grab a good seed from a randomly-generated integer
     goodseed1 = np.random.randint(0, 2**63-1, 1)
     #print goodseed1
     # seed the generator with the good seed
     np.random.seed(goodseed1)
     # blow through some states
-    np.random.randint(-1e9,1e9,1e5)
+    np.random.randint(-1e9, 1e9, 1e5)
     # pick the final good seed from the badseed2-nd number generated
     goodseed2 = np.random.randint(0, 2**63-1, badseed2)
     #print goodseed2
@@ -743,7 +818,7 @@ def two_bad_seeds(badseed1, badseed2):
     # set the state of the generator
     np.random.seed(goodseed2)
     # blow through some states
-    np.random.randint(-1e9,1e9,1e5)
+    np.random.randint(-1e9, 1e9, 1e5)
     # Now you're ready to go!
     return np.random.get_state()
 
@@ -753,18 +828,18 @@ def n_bad_seeds(*args):
     All seeds must be integers in the range [0, 2**32)
     """
     np.random.seed(args[0])
-    for n, badseed in enumerate(args):
+    for _, badseed in enumerate(args):
         next_seed_set = np.random.randint(0, 2**32, badseed+1)
         # init generator with bad seed
         np.random.seed(next_seed_set[badseed])
         # blow through some states to increase entropy
-        np.random.randint(-1e9,1e9,1e5)
+        np.random.randint(-1e9, 1e9, 1e5)
         # grab a good seed (the next randomly-generated integer)
         goodseed = np.random.randint(0, 2**32, 1)
         # seed the generator with the good seed
         np.random.seed(goodseed)
         # blow through some states to increase entropy
-        np.random.randint(-1e9,1e9,1e5)
+        np.random.randint(-1e9, 1e9, 1e5)
     return np.random.get_state()
 
 
@@ -834,6 +909,7 @@ def sampleHypercube(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5,
 
 
 def linExtrap(x, y, xmin, xmax, const_low=False, const_high=False):
+    from scipy import interpolate
     x = np.array(x)
     y = np.array(y)
     sort_ind = np.argsort(x)
@@ -920,7 +996,7 @@ def test_rangeBelowThresh():
     assert rangeBelowThresh(x, y, y_thresh=0) == [(0,0.5), (1.5,4.5), (5.5,6)]
 
     x = [ 0, 1, 2, 3, 4, 5, 6]
-    y = [1, 1, 1, 2, 1, 1, 1]
+    y = [ 1, 1, 1, 2, 1, 1, 1]
     assert rangeBelowThresh(x, y, y_thresh=0) == []
 
 
@@ -950,7 +1026,7 @@ def makeFuncMappable(func, *args, **kwargs):
     return mappableFunc
 
 
-def applyParallel(groupedDF, func, cpucount=None, chunksize=None):
+def applyParallel(grouped_df, func, cpucount=None, chunksize=None):
     """User Pietro Battiston's solution from
     http://stackoverflow.com/questions/26187759/parallelize-apply-after-pandas-groupby
     """
@@ -959,5 +1035,6 @@ def applyParallel(groupedDF, func, cpucount=None, chunksize=None):
         cpucount = multiprocessing.cpu_count()
     #with multiprocessing.Pool(cpucount) as pool:
     pool = multiprocessing.Pool(cpucount)
-    ret_list = pool.imap(func, [group for name, group in groupedDF], chunksize=chunksize)
+    ret_list = pool.imap(func, [group for _, group in grouped_df], chunksize=chunksize)
     return pd.concat(ret_list)
+
