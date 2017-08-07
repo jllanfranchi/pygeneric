@@ -1,22 +1,34 @@
-from __future__ import division
+from __future__ import absolute_import, division
 
 import colorsys
-import numpy as np
-from pylab import *
 from fractions import Fraction
+
+import numpy as np
+import pylab
 import matplotlib as mpl
 from matplotlib import pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap, ListedColormap, LogNorm, PowerNorm
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 
-from smartFormat import smartFormat, TeX, numFmt, numFmt2
+from smartFormat import smartFormat, TeX
+
+
+__all__ = ['MARKERS', 'DARK_BLUE', 'DARK_RED', 'LIGHT_BLUE', 'LIGHT_RED',
+           'colorCycleOrthog', 'invertColor', 'hsvaFact', 'colorCycleRainbow',
+           'human_safe', 'my_rainbow', 'grayify_cmap', 'show_colormap',
+           'plotDefaults', 'generateColorCycle', 'rugplot', 'onpick_peakfind',
+           'onpickLegend_toggle', 'complexPlot', 'plotMatrix', 'removeBorder',
+           'findRenderer', 'ScaledMaxNLocator', 'logticks_format',
+           'smartticks_format', 'fmtstr_format', 'fractticks_format',
+           'maskZeros']
+
 
 MARKERS = ['.', 'v', 'o', '*', '+', 'D', '^', 's', 'p', 'x', '<', '>', 'h', 'H', 'd', '|', '_']
 
 DARK_BLUE = (0.0, 0.0, 0.7)
-DARK_RED =  (0.7, 0.0, 0.0)
+DARK_RED = (0.7, 0.0, 0.0)
 
 LIGHT_BLUE = (0.4, 0.4, 0.8)
-LIGHT_RED =  (0.8, 0.4, 0.4)
+LIGHT_RED = (0.8, 0.4, 0.4)
 
 
 """
@@ -64,18 +76,18 @@ def invertColor(c):
     #    ri = 255-r
     #    gi = 255-g
     #    bi = 255-b
-    #    return '#%02x%02x%02x'%(ri,gi,bi)
+    #    return '#%02x%02x%02x'%(ri, gi, bi)
 
 def hsvaFact(c, hf=1.0, sf=1.0, vf=1.0, af=1.0, clip=True):
     r, g, b, a = mpl.colors.colorConverter.to_rgba(c)
     h, s, v = colorsys.rgb_to_hsv(r, g, b)
     ri, gi, bi = colorsys.hsv_to_rgb(h*hf, s*sf, v*vf)
     if clip:
-        # Clip all values to range [0,1]
-        result = (np.clip(ri,0,1), np.clip(gi,0,1), np.clip(bi,0,1),
-                  np.clip(a*af,0,1))
+        # Clip all values to range [0, 1]
+        result = (np.clip(ri, 0, 1), np.clip(gi, 0, 1), np.clip(bi, 0, 1),
+                  np.clip(a*af, 0, 1))
     else:
-        # Rescale to fit largest within [0,1]; if all of r,g,b fit in this
+        # Rescale to fit largest within [0, 1]; if all of r, g, b fit in this
         # range, do nothing
         maxval = max(ri, gi, bi)
         # Scale colors if one exceeds range
@@ -83,8 +95,8 @@ def hsvaFact(c, hf=1.0, sf=1.0, vf=1.0, af=1.0, clip=True):
             ri /= maxval
             gi /= maxval
             bi /= maxval
-        # Clip alpha to range [0,1]
-        alpha = np.clip(a*af)
+        # Clip alpha to range [0, 1]
+        alpha = np.clip(a*af, a_min=0, a_max=1)
         result = (ri, gi, bi, alpha)
     return result
 
@@ -111,16 +123,16 @@ def grayify_cmap(cmap):
     From: https://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/"""
     cmap = plt.cm.get_cmap(cmap)
     colors = cmap(np.arange(cmap.N))
-    
+
     # convert RGBA to perceived greyscale luminance
     # cf. http://alienryderflex.com/hsp.html
     RGB_weight = [0.299, 0.587, 0.114]
     luminance = np.sqrt(np.dot(colors[:, :3] ** 2, RGB_weight))
     colors[:, :3] = luminance[:, np.newaxis]
-   
-    if isinstance(cmap, LinearSegmentedColormap): 
+
+    if isinstance(cmap, LinearSegmentedColormap):
         return cmap.from_list(cmap.name + "_grayscale", colors, cmap.N)
-    elif isinstance(cmap, ListedColormap): 
+    elif isinstance(cmap, ListedColormap):
         return ListedColormap(colors=colors, name=cmap.name + "_grayscale")
 
 
@@ -136,11 +148,17 @@ def show_colormap(cmap):
 
 def plotColorCycle(color_cycle=colorCycleOrthog):
     N = len(color_cycle)
-    x = np.linspace(0,2*np.pi,100)
+    x = np.linspace(0, 2*np.pi, 100)
     f = plt.figure(333)
-    clf()
+    plt.clf()
     ax = f.add_subplot(111)
-    [ax.plot(x,np.cos(x-2*np.pi/N*n), lw=3, label=format(n,'2d')+': '+color_cycle[n][1:],color=color_cycle[n]) for n in range(N)]
+    for n in range(N):
+        ax.plot(
+            x, np.cos(x-2*np.pi/N*n),
+            lw=3,
+            label=format(n, '2d') + ': ' + color_cycle[n][1:],
+            color=color_cycle[n]
+        )
     plt.legend(loc='center right')
     ax.set_xlim([0, 8.2])
     ax.set_ylim([-1.1, 1.1])
@@ -156,25 +174,24 @@ def plotDefaults():
 
 def generateColorCycle(cmap=mpl.cm.brg, n_colors=8, set_it=True):
     cmap_indices = np.array(
-        np.round(np.arange(0,n_colors)*(cmap.N-1)/(n_colors-1)),
+        np.round(np.arange(0, n_colors)*(cmap.N-1)/(n_colors-1)),
         dtype=int)
-    step_size = int(np.floor(cmap.N/n_colors))
-    color_cycle = [ "#%0.2X%0.2X%0.2X" % tuple(np.round(c[0:3]*255))
-         for c in cmap(cmap_indices) ]
+    color_cycle = ["#%0.2X%0.2X%0.2X" % tuple(np.round(c[0:3]*255))
+                   for c in cmap(cmap_indices)]
     if set_it:
         mpl.rc('axes', color_cycle=color_cycle)
     return color_cycle
 
 
 def rugplot(a, y0, dy, ax, **kwargs):
-    return ax.plot([a,a], [y0, y0+dy], **kwargs)
+    return ax.plot([a, a], [y0, y0+dy], **kwargs)
 
 
 def onpick_peakfind(event):
     """Use this by:
         >> fig = figure(1)
         >> ax = axis(111)
-        >> line, = ax.plot(x,y, picker=5)
+        >> line, = ax.plot(x, y, picker=5)
         >> fig.canvas.mpl_connect('pick_event', onpick_peakfind)
 
     """
@@ -183,7 +200,7 @@ def onpick_peakfind(event):
     thisline = event.artist
     vis = thisline.get_visible()
     #-- This function doesn't handle the lines in the legend
-    fig = event.canvas.figure
+    #fig = event.canvas.figure
     #leg = fig.
     #print leg.__dict__
     #for child in  leg.get_children():
@@ -206,7 +223,7 @@ def onpick_peakfind(event):
     ydata = thisline.get_ydata()
     label = thisline.get_label()
     freqrangeind = event.ind
-    
+
     #print 'onpick points:', zip(xdata[ind], ydata[ind])
 
     #print freqrangeind
@@ -220,7 +237,7 @@ def onpick_peakfind(event):
 
     maxval = ydata[freqrangeind][maxvalind]
     maxx = xdata[freqrangeind][maxvalind]
-  
+
     print ''
     print label
     print 'min:', minval, 'at', minx, 'max:', maxval, 'at', maxx
@@ -228,17 +245,17 @@ def onpick_peakfind(event):
     halfInd = -1
     maxInd = -1
     try:
-        maxInd = find(ydata[freqrangeind] == maxval)
+        maxInd = pylab.find(ydata[freqrangeind] == maxval)
         maxInd = maxInd[0]
         #print maxInd
         maxInd = freqrangeind[0] + maxInd
         halfPower = maxval-10*np.log10(2)
         #quarterind = find(ydata[freqrangeind] < maxval-10*np.log10(4))
-        halfInd = find(ydata < halfPower)
+        halfInd = pylab.find(ydata < halfPower)
 
         inddiff = halfInd - maxInd
-        upperInd = min(halfInd[find(inddiff > 0)])
-        lowerInd = max(halfInd[find(inddiff < 0)])
+        upperInd = min(halfInd[pylab.find(inddiff > 0)])
+        lowerInd = max(halfInd[pylab.find(inddiff < 0)])
 
         #print lowerInd, maxInd, upperInd
 
@@ -249,10 +266,10 @@ def onpick_peakfind(event):
         yUpper = ydata[maxInd:upperInd+1]
         xUpper = xdata[maxInd:upperInd+1]
         dyUpper = max(yUpper)-min(yUpper)
-        
-        figure(999)
-        clf()
- 
+
+        plt.figure(999)
+        plt.clf()
+
         #print ls, lw, mk, mkfc, mksz
         #print l
         #print l.get_markerfacecolor()
@@ -266,11 +283,11 @@ def onpick_peakfind(event):
         #l.set_markerfacecolor(mkfc)
         #l.set_markersize(mksz)
 
-        peakPlotTitle = title(label, fontsize=14)
+        peakPlotTitle = plt.title(label, fontsize=14)
 
         interpKind = 'linear'
-        interpLower = interp1d( yLower, xLower, kind=interpKind )
-        interpUpper = interp1d( np.flipud(yUpper), np.flipud(xUpper), kind=interpKind )
+        interpLower = interp1d(yLower, xLower, kind=interpKind)
+        interpUpper = interp1d(np.flipud(yUpper), np.flipud(xUpper), kind=interpKind)
 
         lowerHalfPowerFreq = interpLower(halfPower)
         upperHalfPowerFreq = interpUpper(halfPower)
@@ -285,17 +302,18 @@ def onpick_peakfind(event):
         f0 = xdata[maxInd]
         Q = f0/delta_f
         print 'f0:', f0, 'delta_f:', delta_f, 'pkval:', ydata[maxInd], 'Q:', Q, 'eta:', 1/Q
-        
-        plot( np.concatenate((ixLower, ixUpper)), np.concatenate((iyLower, iyUpper)), 'b.-', alpha=0.2, linewidth=8 )
-        plot( [lowerHalfPowerFreq, upperHalfPowerFreq], [halfPower]*2, 'c-', linewidth=15, alpha=0.25 )
-        l, = plot( np.concatenate((xLower, xUpper)),
+
+        plt.plot(np.concatenate((ixLower, ixUpper)), np.concatenate((iyLower, iyUpper)), 'b.-', alpha=0.2, linewidth=8)
+        plt.plot([lowerHalfPowerFreq, upperHalfPowerFreq], [halfPower]*2, 'c-', linewidth=15, alpha=0.25)
+        l, = plt.plot(np.concatenate((xLower, xUpper)),
                   np.concatenate((yLower, yUpper)),
                   color=c, linestyle=ls, linewidth=3, marker=mk,
                   markerfacecolor=mkfc, markersize=mksz, markeredgewidth=mkew,
-                  markeredgecolor=mkec )
-        text((lowerHalfPowerFreq+upperHalfPowerFreq)/2, halfPower,
-                 "FWHM = " + lowPrec(delta_f) + ", Q = " + lowPrec(Q) + r", $\eta$ = " + lowPrec(1/Q),
-                 horizontalalignment='center', verticalalignment='center', fontsize=12 )
+                  markeredgecolor=mkec)
+        pylab.text((lowerHalfPowerFreq+upperHalfPowerFreq)/2, halfPower,
+             "FWHM = " + lowPrec(delta_f) + ", Q = " + lowPrec(Q) + r", $\eta$ = " + lowPrec(1/Q),
+             horizontalalignment='center', verticalalignment='center',
+             fontsize=12)
         plt.draw()
     except:
         pass
@@ -333,21 +351,21 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
     nPlots = magPlot + phasePlot + realPlot + imagPlot
 
     #plt.close(fignum)
-    if fig_kwargs == None:
-        fig = plt.figure(fignum, figsize=(7,2.00*nPlots))
+    if fig_kwargs is None:
+        fig = plt.figure(fignum, figsize=(7, 2.00*nPlots))
     else:
         fig = plt.figure(fignum, **fig_kwargs)
-  
-    if plot_kwargs == None:
+
+    if plot_kwargs is None:
         plot_kwargs = [{}]*nPlots
     elif isinstance(plot_kwargs, dict):
         plot_kwargs = [plot_kwargs]*nPlots
 
     #-- Stack plots directly on top of one another
     #plt.subplots_adjust(hspace=0.001)
-    
+
     #fig.clf()
-    
+
     plotN = 0
     axesList = []
     xticklabels = []
@@ -371,11 +389,11 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
             xticklabels += ax.get_xticklabels()
         ax.set_xscale(freqScale)
         ax.set_xlim(min(f), max(f))
-        if plotN == 1 and title != None:
+        if plotN == 1 and title is not None:
             ax.set_title(title)
-        if label != None:
+        if label is not None:
             ax.legend(loc='best')
-    
+
     if phasePlot:
         plotN += 1
         if plotN == 1:
@@ -400,11 +418,11 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
             xticklabels += ax.get_xticklabels()
         ax.set_xscale(freqScale)
         ax.set_xlim(min(f), max(f))
-        if plotN == 1 and title != None:
+        if plotN == 1 and title is not None:
             ax.set_title(title)
-        if label != None:
+        if label is not None:
             ax.legend(loc='best')
-    
+
     if realPlot:
         plotN += 1
         if plotN == 1:
@@ -422,11 +440,11 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
         ax.set_xscale(freqScale)
         ax.set_yscale(realScale)
         ax.set_xlim(min(f), max(f))
-        if plotN == 1 and title != None:
+        if plotN == 1 and title is not None:
             ax.set_title(title)
-        if label != None:
+        if label is not None:
             ax.legend(loc='best')
-     
+
     if imagPlot:
         plotN += 1
         if plotN == 1:
@@ -444,13 +462,13 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
         ax.set_xscale(freqScale)
         ax.set_yscale(imagScale)
         ax.set_xlim(min(f), max(f))
-        if plotN == 1 and title != None:
+        if plotN == 1 and title is not None:
             ax.set_title(title)
-        if label != None:
+        if label is not None:
             ax.legend(loc='best')
-     
+
     ax.set_xscale(freqScale)
-    if xlabel != None:
+    if xlabel is not None:
         ax.set_xlabel(xlabel)
 
     #plt.setp(xticklabels, visible=False)
@@ -461,16 +479,16 @@ def complexPlot(f, data, plot_kwargs=None, fig_kwargs=None, label=None,
 
 
 def plotMatrix(tuplesDict, labelsList):
-    """From: 
+    """From:
     http://fromthepantothefire.com/matplotlib/rock_paper_scissors.py"""
     # list of string labels for rows/columns and
-    # data in dictionary of tuples of these labels (row_label,col_label)
-    
+    # data in dictionary of tuples of these labels (row_label, col_label)
+
     # Map text labels to index used on plot
     # this is convenient if you want to reorganize the display order
     # just update the labelsList order.
     labelNameToIndex = {}
-    for i,lab in enumerate(labelsList):
+    for i, lab in enumerate(labelsList):
         labelNameToIndex[lab] = i
 
     # number of rows and columns
@@ -481,21 +499,21 @@ def plotMatrix(tuplesDict, labelsList):
     for t in tuplesDict:
         x = labelNameToIndex[t[1]]
         # y values are reversed so output oriented the way I
-        # think about matrices (0,0) in upper left.
+        # think about matrices (0, 0) in upper left.
         y = numLabels -1 - labelNameToIndex[t[0]]
-        
+
         # extract value and color
-        (z,c) = tuplesDict[t]
+        (z, c) = tuplesDict[t]
 
-        xyz.append( (x,y,z,c))
+        xyz.append((x, y, z, c))
 
-    for x,y,z,c in xyz:
-        plt.scatter([x],[y], s= [z], color = c, alpha = 0.8)
+    for x, y, z, c in xyz:
+        plt.scatter([x], [y], s=[z], color=c, alpha=0.8)
 
     tickLocations = range(numLabels)
-    plt.xticks(tickLocations, labelsList, rotation = 90)
+    plt.xticks(tickLocations, labelsList, rotation=90)
     # reverse the labels for y axis to match the data
-    plt.yticks(tickLocations, labelsList[::-1]) 
+    plt.yticks(tickLocations, labelsList[::-1])
     # set the axis 1 beyond the data so it looks good.
     plt.axis([-1, numLabels, -1, numLabels])
 
@@ -503,7 +521,7 @@ def plotMatrix(tuplesDict, labelsList):
 def removeBorder(axes=None, top=False, right=False, left=True, bottom=True):
     """
     Minimize chartjunk by stripping out unnecessary plot borders and axis ticks
-    
+
     The top/right/left/bottom keywords toggle whether the corresponding plot
     border is drawn
 
@@ -515,11 +533,11 @@ def removeBorder(axes=None, top=False, right=False, left=True, bottom=True):
     ax.spines['right'].set_visible(right)
     ax.spines['left'].set_visible(left)
     ax.spines['bottom'].set_visible(bottom)
-    
+
     #turn off all ticks
     ax.yaxis.set_ticks_position('none')
     ax.xaxis.set_ticks_position('none')
-    
+
     #now re-enable visibles
     if top:
         ax.xaxis.tick_top()
@@ -534,19 +552,19 @@ def removeBorder(axes=None, top=False, right=False, left=True, bottom=True):
 def findRenderer(fig):
     """From http://stackoverflow.com/questions/22667224/matplotlib-get-text-bounding-box-independent-of-backend"""
     if hasattr(fig.canvas, "get_renderer"):
-        #Some backends, such as TkAgg, have the get_renderer method, which 
+        #Some backends, such as TkAgg, have the get_renderer method, which
         #makes this easy.
         renderer = fig.canvas.get_renderer()
     else:
-        #Other backends do not have the get_renderer method, so we have a work 
-        #around to find the renderer.  Print the figure to a temporary file 
+        #Other backends do not have the get_renderer method, so we have a work
+        #around to find the renderer.  Print the figure to a temporary file
         #object, and then grab the renderer that was used.
-        #(I stole this trick from the matplotlib backend_bases.py 
+        #(I stole this trick from the matplotlib backend_bases.py
         #print_figure() method.)
         import io
         fig.canvas.print_pdf(io.BytesIO())
         renderer = fig._cachedRenderer
-    return(renderer)
+    return renderer
 
 
 class ScaledMaxNLocator(mpl.ticker.MaxNLocator):
@@ -570,7 +588,7 @@ def logticks_format(value, index):
     otherwise returns $base*10^{exp}$
     I've designed the function to be use with values for which the decomposition
     returns integers
-    
+
     Use as:
         import matplotlib.ticker as ticker
         subs = [1., 3., 6.]
@@ -590,7 +608,7 @@ def logticks_format(value, index):
         return '${0:d}\\times10^{{{1:d}}}$'.format(int(base), int(exp))
 
 def smartticks_format(**kwargs):
-    sfmtargs = dict(sciThresh=[4,4],
+    sfmtargs = dict(sciThresh=[4, 4],
                     sigFigs=3,
                     keepAllSigFigs=False)
     if not kwargs is None:
@@ -610,8 +628,8 @@ def fractticks_format(DENOM_LIMIT):
     def fract_ticks_formatter(value, index):
         f = Fraction(value).limit_denominator(DENOM_LIMIT)
         if f.denominator == 1:
-            return r'$' + format(f.numerator,'d') + r'$'
-        return r'$' + format(f.numerator,'d') + r'/' + format(f.denominator,'d') + r'$'
+            return r'$' + format(f.numerator, 'd') + r'$'
+        return r'$' + format(f.numerator, 'd') + r'/' + format(f.denominator, 'd') + r'$'
     return fract_ticks_formatter
 
 

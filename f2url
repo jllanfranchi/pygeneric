@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+import os, sys
+import urllib2
+
+#pwd = os.getcwd()
+#home = os.path.expanduser('~')
+fname = ' '.join(sys.argv[1:])
+pwd = os.environ['PWD']
+print "file://" + urllib2.quote(os.path.join(pwd, fname))

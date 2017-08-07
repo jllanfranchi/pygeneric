@@ -4,11 +4,12 @@ My collected generic utilities (whether coded by me or others)
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 import copy
 import cPickle
 import functools
+import grp
 import inspect
 import itertools
 import multiprocessing
@@ -48,18 +49,48 @@ except ImportError:
     pass
 
 
-def chown_and_chmod(f, mode, uid=-1, gid=-1):
+__all__ = ['chown_and_chmod', 'SIGMA_OR_PCT_RE', 'sigmaOrPct2ConfIntvl',
+           'sigmaOrPct2chi2', 'sigma2confIntvl', 'pct2sigma', 'pct2confIntvl',
+           'confIntvl2chi2', 'sigma2chi2', 'pct2chi2', 'jeffreys_interval',
+           'trace', 'my_hash', 'cmp_to_key', 'genericTester', 'DictDiffer',
+           'expand', 'absPath', 'mkdir', 'timediffstamp', 'timestamp',
+           'nsort', 'findFiles', 'wstdout', 'wstderr', 'memoize_volatile',
+           'func_memoize_persistent', 'NUMBER_RESTR', 'NUMBER_RE',
+           'HRGROUP_RESTR', 'HRGROUP_RE', 'num2floatOrInt', 'isint',
+           'hrgroup2list', 'WS_RE', 'hrlist2list', 'hrlol2lol', 'list2hrlist',
+           'hrbool2bool', 'two_bad_seeds', 'n_bad_seeds', 'samplesFilename',
+           'sampleHypercube', 'linExtrap', 'rangeBelowThresh',
+           'test_rangeBelowThresh', 'home', 'pdSafe', 'makeFuncMappable',
+           'applyParallel']
+
+
+def chown_and_chmod(f, mode, uid=-1, group=-1):
     """Change group and permissions of a file handle or file path
 
     Parameters
     ----------
     f : file handle or string
     mode : binary
-    uid : int
-    gid : int
-        Group ID. See `grp` module for how to obtain group IDs.
+    uid : None or int
+        None or -1 does not set uid
+    group : None, int, or string
+        If None or -1, do not set gid. If int or string, set appropriate gid:
+        string is interpreted as group name, which must be converted by OS to
+        GID, while int is interpreted directly as a GID.
 
     """
+    if group is None:
+        gid = -1
+    elif isinstance(group, basestring):
+        gid = get_gid(group)
+    elif isinstance(group, int):
+        gid = group
+    else:
+        raise TypeError('Invalid `group`: %s, type %s' % (group, type(group)))
+
+    if uid is None:
+        uid = -1
+
     if isinstance(f, file):
         os.fchown(f.fileno(), uid, gid)
         os.fchmod(f.fileno(), mode)
@@ -70,7 +101,9 @@ def chown_and_chmod(f, mode, uid=-1, gid=-1):
         raise TypeError('Unhandled type for arg `f`: %s' % type(f))
 
 
-SIGMA_OR_PCT_RE = re.compile(r'(?P<val>[0-9]+)(?P<unit>sigma|sig|pct|percent|%)')
+SIGMA_OR_PCT_RE = re.compile(
+    r'(?P<val>[0-9]+)(?P<unit>sigma|sig|pct|percent|%)'
+)
 def sigmaOrPct2ConfIntvl(s):
     md = SIGMA_OR_PCT_RE.match(s.lower()).groupdict()
     if md['unit'] in ['pct', 'percent', '%']:
@@ -189,7 +222,7 @@ def jeffreys_interval(x_successes, n_trials, conf):
 #    np.random.seed(seed)
 
 
-def trace(frame, event, arg):
+def trace(frame, event, arg): # pylint: disable=unused-argument
     wstderr("%s, %s:%d\n" % (event, frame.f_code.co_filename, frame.f_lineno))
     return trace
 
@@ -203,7 +236,7 @@ def cmp_to_key(mycmp):
     """Convert a cmp= function into a key= function.
     wiki.python.org/moin/HowTo/Sorting"""
     class K(object):
-        def __init__(self, obj, *args):
+        def __init__(self, obj, *args): # pylint: disable=unused-argument
             self.obj = obj
         def __lt__(self, other):
             return mycmp(self.obj, other.obj) < 0
@@ -247,7 +280,8 @@ class DictDiffer(object):
     """
     def __init__(self, current_dict, past_dict):
         self.current_dict, self.past_dict = current_dict, past_dict
-        self.set_current, self.set_past = set(current_dict.keys()), set(past_dict.keys())
+        self.set_current = set(current_dict.keys())
+        self.set_past = set(past_dict.keys())
         self.intersect = self.set_current.intersection(self.set_past)
 
     def added(self):
@@ -257,13 +291,16 @@ class DictDiffer(object):
         return self.set_past - self.intersect
 
     def changed(self):
-        return set(o for o in self.intersect if self.past_dict[o] != self.current_dict[o])
+        return set(o for o in self.intersect
+                   if self.past_dict[o] != self.current_dict[o])
 
     def unchanged(self):
-        return set(o for o in self.intersect if self.past_dict[o] == self.current_dict[o])
+        return set(o for o in self.intersect
+                   if self.past_dict[o] == self.current_dict[o])
 
 
-def expandPath(path):
+def expand(path):
+    """Shortcut to expand user and (shell) vars in a pathname"""
     return os.path.expandvars(os.path.expanduser(path))
 
 
@@ -271,18 +308,47 @@ def absPath(path):
     return os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
 
 
-def mkdir(d, mode=0750, warn=True):
-    d = os.path.expandvars(os.path.expanduser(d))
-    if warn and os.path.isdir(d):
-        logging.warn('Directory already exists: "%s"' % d)
+def path_components(path):
+    reversed_comp = []
+    while True:
+        parts = os.path.split(path)
+        reversed_comp.append(parts[1])
+        if parts[0] == '':
+            break
+        if parts[0] == '/':
+            reversed_comp.append(parts[0])
+            break
+        path = parts[0]
+    return reversed_comp[::-1]
 
-    try:
-        os.makedirs(os.path.expandvars(os.path.expanduser(d)), mode=mode)
-    except OSError as err:
-        if err[0] != 17:
-            raise err
-    else:
-        logging.info('Created directory: "%s"' % d)
+
+def get_gid(group):
+    if isinstance(group, int):
+        return group
+    if isinstance(group, basestring):
+        return grp.getgrnam(group).gr_gid
+
+
+def mkdir(d, mode=0o2777, group=None, warn=True):
+    """Only set mode and group for dirs created by this function"""
+    d = expand(d)
+    gid = None
+    if group is not None:
+        gid = get_gid(group)
+
+    if warn and os.path.isdir(d):
+        logging.warn('Directory already exists: "%s"', d)
+        return
+
+    dirs = path_components(d)
+    fullpath = ''
+    for d in dirs:
+        fullpath = os.path.join(fullpath, d)
+        if os.path.isdir(fullpath):
+            continue
+        os.mkdir(fullpath, mode)
+        if gid is not None:
+            os.chown(fullpath, -1, gid)
 
 
 def timediffstamp(dt_sec, hms_always=False):
@@ -304,17 +370,17 @@ def timediffstamp(dt_sec, hms_always=False):
 
     if float(s) == int(s):
         s = int(s)
-        if len(strdt) > 0:
+        if strdt:
             s_fmt = '02d'
         else:
             s_fmt = 'd'
     else:
         s = np.round(s, 3)
-        if len(strdt) > 0:
+        if strdt:
             s_fmt = '06.3f'
         else:
             s_fmt = '.3f'
-    if len(strdt) > 0:
+    if strdt:
         strdt += format(s, s_fmt)
     else:
         strdt += format(s, s_fmt) + ' sec'
@@ -436,7 +502,7 @@ def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
 
     if regex is None:
         if fname is None:
-            def validfilefunc(fn):
+            def validfilefunc(fn): # pylint: disable=unused-argument
                 return True, None
         else:
             def validfilefunc(fn):
@@ -497,12 +563,15 @@ def memoize_volatile(obj):
 
 
 # TODO: Make serialization method, compression, etc. optional
-# TODO: Add .pkl{protocol ver} extension to pickled files (is this even a good idea?)
-def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CACHE', diskcache_enabled=True, memcache_enabled=True):
+# TODO: Add .pkl{protocol ver} extension to pickled files (is this even a good
+#       idea?)
+def func_memoize_persistent(diskcache_dir=None,
+                            diskcache_dir_envvar='PYTHON_CACHE',
+                            diskcache_enabled=True, memcache_enabled=True):
     """
-    1. Assume any ACTUALLY important arguments are defined with names (i.e., NOT
-       gotten by the function via *args or **kwargs). Hash will be based ONLY
-       upon values passed into the name-specified arguments (found via
+    1. Assume any ACTUALLY important arguments are defined with names (i.e.,
+       NOT gotten by the function via *args or **kwargs). Hash will be based
+       ONLY upon values passed into the name-specified arguments (found via
        inspect.getargspec(f).args).
 
        NOTE: A "hash key" is named via the following convention:
@@ -533,9 +602,9 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
 
     4. If the hash key exists neither in the memory cache nor in the disk cache
        dir, run the function with all arguments (not just named args, so
-       including *args and **kwargs), and then store the result in the memory cache AND
-       in a file named with the hash key in the first-specified dir among
-       {diskcache_dir, $PYTHON_CACHE, $PWD}).
+       including *args and **kwargs), and then store the result in the memory
+       cache AND in a file named with the hash key in the first-specified dir
+       among {diskcache_dir, $PYTHON_CACHE, $PWD}).
     """
     import jsonpickle
 
@@ -557,25 +626,32 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
             if DCD:
                 diskcache_dir = func.diskcache_dir = DCD
             else:
-                diskcache_dir = func.diskcache_dir = os.path.expandvars('$'+CACHE_VARNAME)
+                diskcache_dir = func.diskcache_dir = os.path.expandvars(
+                    '$'+CACHE_VARNAME
+                )
                 if diskcache_dir == '$'+CACHE_VARNAME:
                     # Revert to .pycache directory in local dir
                     cwd = os.getcwd()
-                    diskcache_dir = func.diskcache_dir = os.path.join(cwd, '.pycache')
-            wstderr('Using dir \'' + os.path.abspath(diskcache_dir) + '\' for caching results to disk.')
+                    diskcache_dir = func.diskcache_dir = os.path.join(
+                        cwd, '.pycache'
+                    )
+            wstderr('Using dir \'' + os.path.abspath(diskcache_dir)
+                    + '\' for caching results to disk.')
             if not os.path.exists(diskcache_dir):
                 wstderr(' Dir does not exist. Creating... ')
                 try:
                     os.makedirs(diskcache_dir)
                 except OSError as err:
-                    if err[0] != 17:
+                    if err.errno != 17:
                         wstderr(' failed.\n')
                         raise err
                 else:
                     wstderr(' success.')
             wstderr('\n')
             if not os.path.isdir(diskcache_dir):
-                wstderr('Cache path \'' + diskcache_dir + '\' does not point to a valid directory. Disk caching disabled.\n')
+                wstderr('Cache path \'' + diskcache_dir
+                        + '\' does not point to a valid directory. Disk'
+                        ' caching disabled.\n')
                 diskcache_enabled = func.diskcache_enabled = False
 
         # Retrieve info about func & its args
@@ -590,23 +666,27 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
         @functools.wraps(func)
         def memoizer(*args, **kwargs):
             force_execution = False
-            if kwargs.has_key('MEMO_FORCE_EXECUTION') and kwargs['MEMO_FORCE_EXECUTION']:
+            if (kwargs.has_key('MEMO_FORCE_EXECUTION') and
+                    kwargs['MEMO_FORCE_EXECUTION']):
                 force_execution = True
 
             #
-            # Stringify only the args defined by name in the function's arg spec...
+            # Stringify only the args defined by name in the function's arg
+            # spec...
             #
 
-            # Populate default arguments & their values. May be overwritten below.
+            # Populate default arguments & their values. May be overwritten
+            # below.
             named_args = {}
             if argspec.defaults:
-                named_args = {arg: dflt for arg, dflt in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)}
+                named_args = {arg: dflt for arg, dflt in
+                              zip(argspec.args[-len(argspec.defaults):],
+                                  argspec.defaults)}
 
             tmp_argspec_args = copy.deepcopy(argspec.args)
-            #print tmp_argspec_args, len(tmp_argspec_args), len(args), len(kwargs)
             argsspecd_n = 0
             for arg in args:
-                if len(tmp_argspec_args) == 0:
+                if not tmp_argspec_args:
                     break
                 refarg = tmp_argspec_args.pop(0)
                 named_args[refarg] = arg
@@ -624,13 +704,20 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
             args_bstr = b''
             for arg in sorted(named_args.keys()):
                 try:
-                    arg_bstr = cPickle.dumps(named_args[arg], protocol=cPickle.HIGHEST_PROTOCOL)
+                    arg_bstr = cPickle.dumps(named_args[arg],
+                                             protocol=cPickle.HIGHEST_PROTOCOL)
                 except:
-                    wstderr(' ** failed to hash argument ' +  arg + ' via cPickle.dumps; trying jsonpickle' + '\n')
+                    wstderr(' ** failed to hash argument ' +  arg
+                            + ' via cPickle.dumps; trying jsonpickle' + '\n')
                     try:
-                        arg_bstr = jsonpickle.encode(named_args, unpicklable=False)
+                        arg_bstr = jsonpickle.encode(named_args,
+                                                     unpicklable=False)
                     except:
-                        wstderr(' ** failed to hash argument ' +  arg + ' via jsonpickle; forcing recomputation of function ' + func_hash + '\n')
+                        wstderr(
+                            ' ** failed to hash argument ' +  arg
+                            + ' via jsonpickle; forcing recomputation of'
+                            ' function ' + func_hash + '\n'
+                        )
                         requires_recompute = True
                         break
                 args_bstr += arg + arg_bstr
@@ -646,7 +733,9 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
             key = '_'.join((func_hash, arg_hash))
             fpath = os.path.join(diskcache_dir, key)
 
-            if not(memcache_enabled) or (memcache_enabled and (key not in memcache)) or force_execution:
+            if (not(memcache_enabled)
+                    or (memcache_enabled and (key not in memcache))
+                    or force_execution):
                 #... need to check disk cache, or re-run the function
                 in_diskcache = False
                 if not force_execution and diskcache_enabled:
@@ -664,7 +753,8 @@ def func_memoize_persistent(diskcache_dir=None, diskcache_dir_envvar='PYTHON_CAC
                     ret = func(*args, **kwargs)
                     if diskcache_enabled:
                         with file(fpath, 'wb') as f:
-                            cPickle.dump(ret, f, protocol=cPickle.HIGHEST_PROTOCOL)
+                            cPickle.dump(ret, f,
+                                         protocol=cPickle.HIGHEST_PROTOCOL)
                 if memcache_enabled:
                     memcache[key] = ret
             else:
@@ -683,12 +773,14 @@ NUMBER_RE = re.compile(NUMBER_RESTR, re.IGNORECASE)
 # The starting number
 # Optional range, e.g., --10 (which means "to negative 10"); in my
 # interpretation, the "to" number should be *INCLUDED* in the list
-# If there's a range, optional stepsize, e.g., --10 (which means "to negative 10")
-HRGROUP_RESTR = \
-        NUMBER_RESTR + \
-        r'(?:-' + NUMBER_RESTR + \
-        r'(?:\:' + NUMBER_RESTR + r'){0,1}' + \
-        r'){0,1}'
+# If there's a range, optional stepsize, e.g., --10 (which means "to negative
+# 10")
+HRGROUP_RESTR = (
+    NUMBER_RESTR +
+    r'(?:-' + NUMBER_RESTR +
+    r'(?:\:' + NUMBER_RESTR + r'){0,1}' +
+    r'){0,1}'
+)
 HRGROUP_RE = re.compile(HRGROUP_RESTR, re.IGNORECASE)
 
 
@@ -736,9 +828,10 @@ WS_RE = re.compile(r'\s')
 def hrlist2list(hrlst):
     groups = re.split(r'[,; _]+', WS_RE.sub('', hrlst))
     lst = []
-    if len(groups) == 0:
+    if not groups:
         return lst
-    [lst.extend(hrgroup2list(g)) for g in groups]
+    for g in groups:
+        lst.extend(hrgroup2list(g))
     return lst
 
 
@@ -747,9 +840,9 @@ def hrlol2lol(hrlol):
     return [hrlist2list(group) for group in supergroups]
 
 
-# Below is adapted by me to make scientific notation work correctly from Scott B's
-# adaptation to Python 2 of Rik Poggi's answer to his question:
-#   stackoverflow.com/questions/9847601/convert-list-of-numbers-to-string-ranges
+# Below is adapted by me to make scientific notation work correctly from Scott
+# B's adaptation to Python 2 of Rik Poggi's answer to his question:
+# stackoverflow.com/questions/9847601/convert-list-of-numbers-to-string-ranges
 def hrlist_formatter(start, end, step):
     if step == 1:
         return '{}-{}'.format(start, end)
@@ -824,9 +917,7 @@ def two_bad_seeds(badseed1, badseed2):
 
 
 def n_bad_seeds(*args):
-    """
-    All seeds must be integers in the range [0, 2**32)
-    """
+    """All seeds must be integers in the range [0, 2**32)"""
     np.random.seed(args[0])
     for _, badseed in enumerate(args):
         next_seed_set = np.random.randint(0, 2**32, badseed+1)
@@ -843,7 +934,8 @@ def n_bad_seeds(*args):
     return np.random.get_state()
 
 
-def samplesFilename(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5, prefix=None, suffix=None, extn='.pkl'):
+def samplesFilename(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5,
+                    prefix=None, suffix=None, extn='.pkl'):
     if isinstance(crit, basestring):
         crit = crit.lower().strip()
     if (crit is None) or crit == '':
@@ -896,7 +988,7 @@ def sampleHypercube(n_dim, n_samp, rand_set_id=0, crit='m', iterations=5,
         samps = fileio.from_file(fpath)
     else:
         logging.info('File not found. Generating new set of samples & saving'
-                     ' result to "%s"' % fpath)
+                     ' result to "%s"', fpath)
         import pyDOE
         mkdir(rdata_dir)
         # Set a deterministic random state based upon the critical hypercube
@@ -961,9 +1053,8 @@ def rangeBelowThresh(x, y, y_thresh):
     dbi = np.diff(np.concatenate(([0], boolind, [0])))
     left_inds = np.where(dbi > 0)[0]
     right_inds = np.where(dbi < 0)[0] - 1
-    ranges_inds = zip(left_inds, right_inds)
     ranges = []
-    for (left_n, right_n) in ranges_inds:
+    for (left_n, right_n) in zip(left_inds, right_inds):
         if left_n == 0:
             x_left = x[left_n]
         else:
@@ -987,6 +1078,7 @@ def rangeBelowThresh(x, y, y_thresh):
 
 
 def test_rangeBelowThresh():
+    # pylint: disable=bad-whitespace
     x = [0, 1, 2, 3, 4, 5, 6]
     y = [3, 1,-1,-2,-1, 1,-1]
     assert rangeBelowThresh(x, y, y_thresh=0) == [(1.5,4.5), (5.5,6)]
@@ -1035,6 +1127,6 @@ def applyParallel(grouped_df, func, cpucount=None, chunksize=None):
         cpucount = multiprocessing.cpu_count()
     #with multiprocessing.Pool(cpucount) as pool:
     pool = multiprocessing.Pool(cpucount)
-    ret_list = pool.imap(func, [group for _, group in grouped_df], chunksize=chunksize)
+    ret_list = pool.imap(func, [group for _, group in grouped_df],
+                         chunksize=chunksize)
     return pd.concat(ret_list)
-
