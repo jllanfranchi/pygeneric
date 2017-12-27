@@ -183,12 +183,9 @@ def contractPolyApprox(vert, perp_dist):
 def cherenkovAngle(n, speed, light_vac_speed=const.c):
     """Returns the Cherenkov angle, in radians, for a particle moving in a
     medium with index of refraction n at the given speed."""
-    ## TODO: add warning if the following holds! (but it's here because someone
-    ## might say speed = 3e8 instead of specifying const.c
-    if speed > light_vac_speed:
-        speed = light_vac_speed
+    #assert np.all(speed <= light_vac_speed)
     beta = speed / light_vac_speed
-    cos_theta = 1/(n*beta)
+    cos_theta = 1 / (n * beta)
     return np.arccos(cos_theta)
 
 

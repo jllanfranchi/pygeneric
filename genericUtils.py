@@ -351,17 +351,50 @@ def mkdir(d, mode=0o2777, group=None, warn=True):
             os.chown(fullpath, -1, gid)
 
 
-def timediffstamp(dt_sec, hms_always=False):
-    if dt_sec < 0:
-        sign = '-'
-        dt_sec = -dt_sec
-    else:
-        sign = ''
+def timediffstamp(dt_sec, hms_always=False, sec_decimals=3):
+    """Smart string formatting for a time difference (in seconds)
 
-    r = dt_sec % 3600
-    h = int((dt_sec - r)/3600)
-    s = r % 60
-    m = int((r - s)/60)
+    Parameters
+    ----------
+    dt_sec : numeric
+        Time difference, in seconds
+    hms_always : bool
+        * True
+            Always display hours, minuts, and seconds regardless of the order-
+            of-magnitude of dt_sec
+        * False
+            Display a minimal-length string that is meaningful, by omitting
+            units that are more significant than those necessary to display
+            dt_sec; if...
+            * dt_sec < 1 s
+                Use engineering formatting for the number.
+            * dt_sec is an integer in the range 0-59 (inclusive)
+                `sec_decimals` is ignored and the number is formatted as an
+                integer
+            See Notes below for handling of units.
+        (Default: False)
+    sec_decimals : int
+        Round seconds to this number of digits
+
+    Notes
+    -----
+    If colon notation (e.g. HH:MM:SS.xxx, MM:SS.xxx, etc.) is not used, the
+    number is only seconds, and is appended by a space ' ' followed by units
+    of 's' (possibly with a metric prefix).
+
+    """
+    sign_str = ''
+    sgn = 1
+    if dt_sec < 0:
+        sgn = -1
+        sign_str = '-'
+    dt_sec = sgn*dt_sec
+
+    h, r = divmod(dt_sec, 3600)
+    m, s = divmod(r, 60)
+    h = int(h)
+    m = int(m)
+
     strdt = ''
     if hms_always or h != 0:
         strdt += format(h, '02d') + ':'
@@ -370,22 +403,27 @@ def timediffstamp(dt_sec, hms_always=False):
 
     if float(s) == int(s):
         s = int(s)
-        if strdt:
-            s_fmt = '02d'
-        else:
-            s_fmt = 'd'
+        s_fmt = 'd' if len(strdt) == 0 else '02d'
     else:
-        s = np.round(s, 3)
-        if strdt:
-            s_fmt = '06.3f'
+        # If no hours or minutes, use engineering fmt for seconds
+        if (h == 0) and (m == 0) and not hms_always:
+            sec_str = engfmt(dt_sec*sgn, sigfigs=100, decimals=sec_decimals)
+            return sec_str + 's'
+        # Otherwise, round seconds to sec_decimals decimal digits
+        s = np.round(s, sec_decimals)
+        if len(strdt) == 0:
+            s_fmt = '.%df' %sec_decimals
         else:
-            s_fmt = '.3f'
-    if strdt:
+            if sec_decimals == 0:
+                s_fmt = '02.0f'
+            else:
+                s_fmt = '0%d.%df' %(3+sec_decimals, sec_decimals)
+    if len(strdt) > 0:
         strdt += format(s, s_fmt)
     else:
-        strdt += format(s, s_fmt) + ' sec'
+        strdt += format(s, s_fmt) + ' s'
 
-    return sign + strdt
+    return sign_str + strdt
 
 
 def timestamp(at=None, d=True, t=True, tz=True, utc=False, winsafe=False,
