@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
 
+from __future__ import absolute_import, print_function
+
 import numpy as np
 import IPython
 
-uncertaintiesPresent = True
+UNCERTAINTIES_AVAIL = True
 try:
     import uncertainties
 except ImportError:
-    uncertaintiesPresent = False
+    UNCERTAINTIES_AVAIL = False
 
 
 __author__ = "J.L. Lanfranchi"
@@ -38,7 +40,7 @@ def TeX(s):
     return r'$' + s + r'$'
 
 
-def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
+def smartFormat(x, sigFigs=7, sciThresh=(7, 6), keepAllSigFigs=False,
                 alignOnDec=False, threeSpacing=True, alwaysShowSign=False,
                 forcedExp=None, demarc=r'$', alignChar=r"&",
                 leftSep=r"{,}", rightSep=r"{\,}", decSep=r".",
@@ -54,49 +56,49 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
 
     return_vals = []
 
-    for x in vals:
+    for val in vals:
         effectivelyZero = False
 
-        if uncertaintiesPresent:
-            if isinstance(x, uncertainties.UFloat):
-                x = x.nominal_value
+        if UNCERTAINTIES_AVAIL:
+            if isinstance(val, uncertainties.UFloat):
+                val = val.nominal_value
 
-        if (np.isinf(x) and not np.isneginf(x)) or x >= inftyThresh:
+        if (np.isinf(val) and not np.isneginf(val)) or val >= inftyThresh:
             if alignOnDec:
-                return_vals.append( demarc+r"\infty" + demarc + r" " + alignChar )
+                return_vals.append(demarc+r"\infty" + demarc + r" " + alignChar)
                 continue
             else:
-                return_vals.append( demarc+r"\infty"+demarc )
+                return_vals.append(demarc+r"\infty"+demarc)
                 continue
 
-        if np.isneginf(x) or x <= -inftyThresh:
+        if np.isneginf(val) or val <= -inftyThresh:
             if alignOnDec:
-                return_vals.append( demarc+r"-\infty" + demarc + " " + alignChar )
+                return_vals.append(demarc+r"-\infty" + demarc + " " + alignChar)
                 continue
             else:
-                return_vals.append( demarc+r"-\infty"+demarc )
+                return_vals.append(demarc+r"-\infty"+demarc)
                 continue
 
-        elif np.isnan(x):
+        elif np.isnan(val):
             if alignOnDec:
-                return_vals.append( nanSub + r" " + alignChar )
+                return_vals.append(nanSub + r" " + alignChar)
                 continue
             else:
-                return_vals.append( nanSub )
+                return_vals.append(nanSub)
                 continue
 
-        elif x == 0:
+        elif val == 0:
             effectivelyZero = True
 
         if not effectivelyZero:
             #-- Record sign of number
-            sign = np.sign(x)
-            
+            sign = np.sign(val)
+
             #-- Create unsigned version of number
-            x_unsigned = sign * x
+            val_unsigned = sign * val
 
             #-- Find exact (decimal) magnitude
-            exact_mag = np.log10(x_unsigned)
+            exact_mag = np.log10(val_unsigned)
 
             #-- Find floor of exact magnitude (integral magnitude)
             floor_mag = float(np.floor(exact_mag))
@@ -106,17 +108,17 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
 
             #-- Where is the least significant digit?
             leastSigDig = mostSigDig-sigFigs+1
-            #print 'mostSigDig',mostSigDig
-            #print 'leastSigDig',leastSigDig
+            #print('mostSigDig', mostSigDig)
+            #print('leastSigDig', leastSigDig)
 
             #-- Round number to have correct # of sig figs
-            x_u_rnd = np.round(x_unsigned, -int(leastSigDig))
+            val_u_rnd = np.round(val_unsigned, -int(leastSigDig))
 
             #------------------------------------------------------------
             # Repeat process from above to find mag, etc.
             #
             #-- Find exact (decimal) magnitude
-            exact_mag = np.log10(x_u_rnd)
+            exact_mag = np.log10(val_u_rnd)
             #-- Find floor of exact magnitude (integral magnitude)
             floor_mag = float(np.floor(exact_mag))
             #-- Where is the most significant digit?
@@ -126,15 +128,15 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
             #------------------------------------------------------------
 
             #-- Mantissa (integral value)
-            x_mantissa = np.int64(x_u_rnd * 10**(-leastSigDig))
+            val_mantissa = np.int64(val_u_rnd * 10**(-leastSigDig))
 
             #-- Find position of least signficant non-zero digit
             for n in range(sigFigs+1):
                 lsnzd = n
-                if ((x_mantissa/(10**(n+1))) * 10**(n+1)) != x_mantissa:
+                if ((val_mantissa // (10**(n+1))) * 10**(n+1)) != val_mantissa:
                     break
 
-            #print 'lsnzd',lsnzd
+            #print('lsnzd', lsnzd)
 
             #-- Is the number effectively zero to this many sig figs?
             if lsnzd == sigFigs+1:
@@ -145,11 +147,12 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
                 if mostSigDig < forcedExp:
                     effectivelyZero = True
 
-            #-- Scale mantissa down to nonzero digits unless keepAllSigFigs is true
+            #-- Scale mantissa down to nonzero digits unless keepAllSigFigs is
+            #   true
             if not keepAllSigFigs:
-                x_mantissa = np.int64(x_mantissa * 10**(-lsnzd))
-                leastSigDig = int(mostSigDig - len(x_mantissa.__str__()) + 1)
-                #print lsnzd, x_mantissa
+                val_mantissa = np.int64(val_mantissa * 10**(-lsnzd))
+                leastSigDig = int(mostSigDig - len(val_mantissa.__str__()) + 1)
+                #print(lsnzd, val_mantissa)
 
         #-- If effectively zero, return the formatted string
         if effectivelyZero:
@@ -173,7 +176,7 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
 
             s += demarc
 
-            return_vals.append( s )
+            return_vals.append(s)
             continue
 
         ## TODO: Why does the # of digits trailing decimal matter?
@@ -181,18 +184,19 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
         if (mostSigDig > sciThresh[0]) or (leastSigDig < -sciThresh[1]):
             useSciFmt = True
 
-        #print 'useSciFmt',useSciFmt
+        #print('useSciFmt', useSciFmt)
 
         if useSciFmt:
             numStr = demarc
 
             #-- Extend the mantissa to include zeros if keepAllSigFigs is true
             if keepAllSigFigs:
-                x_mantissa = np.int64(x_mantissa *
-                                      10**(sigFigs - len(x_mantissa.__str__())))
+                val_mantissa = np.int64(
+                    val_mantissa * 10**(sigFigs - len(val_mantissa.__str__()))
+                )
 
             #-- Convert mantissa to a string
-            ms = x_mantissa.__str__()
+            ms = val_mantissa.__str__()
 
             #-- Sign
             if sign == -1:
@@ -217,7 +221,7 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
                 numStr += z
 
             #-- Exponent
-            numStr += expLeftFmt + format(int(mostSigDig),'d') + expRightFmt
+            numStr += expLeftFmt + format(int(mostSigDig), 'd') + expRightFmt
 
             numStr += demarc
 
@@ -227,22 +231,23 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
             #-- Extend (or contract) the mantissa to include zeros if
             #   keepAllSigFigs is true
             if keepAllSigFigs:
-                x_mantissa = np.int64(x_mantissa *
-                                      10**(sigFigs - len(x_mantissa.__str__())))
+                val_mantissa = np.int64(
+                    val_mantissa * 10**(sigFigs - len(val_mantissa.__str__()))
+                )
 
             #-- Where does least significant digit fall now?
-            lsd = int(mostSigDig - len(x_mantissa.__str__())+1)
+            lsd = int(mostSigDig - len(val_mantissa.__str__())+1)
 
-            #-- Extend the mantissa to include any zeros between least sig dig and
-            #   the decimal point
+            #-- Extend the mantissa to include any zeros between least sig dig
+            #   and the decimal point
             if lsd > 0:
-                x_mantissa = np.int64(x_mantissa * 10**(lsd))
+                val_mantissa = np.int64(val_mantissa * 10**lsd)
 
                 #-- Least significant digit is now at the one's place
                 lsd = int(0)
 
             #-- Convert mantissa to a string
-            ms = x_mantissa.__str__()
+            ms = val_mantissa.__str__()
 
             msd = int(mostSigDig)
 
@@ -280,58 +285,59 @@ def smartFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
 
             numStr += demarc
 
-        return_vals.append( numStr )
+        return_vals.append(numStr)
         continue
 
         ### <DEBUG>  ##
-        #sys.stdout.write('x: ' + format(x) + '  ')
-        #sys.stdout.write('x_u: ' + format(x_unsigned) + '  ')
-        #sys.stdout.write('log10(x_u): ' + format(exact_mag) + '  ')
+        #sys.stdout.write('val: ' + format(val) + '  ')
+        #sys.stdout.write('val_u: ' + format(val_unsigned) + '  ')
+        #sys.stdout.write('log10(val_u): ' + format(exact_mag) + '  ')
         #sys.stdout.write('floor_mag: ' + format(floor_mag) + '  ')
-        #sys.stdout.write('x_u_rnd: ' + format(x_u_rnd) + '  ')
-        #sys.stdout.write('x_fmt: ' + x_fmt)
+        #sys.stdout.write('val_u_rnd: ' + format(val_u_rnd) + '  ')
+        #sys.stdout.write('val_fmt: ' + val_fmt)
         #sys.stdout.write('\n')
         ### </DEBUG> ##
 
     if not is_iterable:
         return_vals = return_vals[0]
-    
+
     return return_vals
 
-def sepThreeTens(stringifiedNum, dir, leftSep=r"{,}", rightSep=r"{\,}", threeSpacing=True):
+def sepThreeTens(stringifiedNum, dir, leftSep=r"{,}", rightSep=r"{\,}",
+                 threeSpacing=True):
     if not threeSpacing:
         return stringifiedNum
 
     sFmt = r""
     if dir == 'left':
-        R = range(len(stringifiedNum)-1,-1,-1)
+        rng = list(range(len(stringifiedNum)-1, -1, -1))
         delta = len(stringifiedNum)-1
         sep = leftSep
-        for cNum in R:
+        for cNum in rng:
             sFmt = stringifiedNum[cNum] + sFmt
-            if (((delta-cNum)+1) % 3 == 0) and (cNum not in [R[0], R[-1]]):
+            if (((delta-cNum)+1) % 3 == 0) and (cNum not in [rng[0], rng[-1]]):
                 sFmt = sep + sFmt
     else:
-        R = range(len(stringifiedNum))
+        rng = list(range(len(stringifiedNum)))
         sep = rightSep
-        for cNum in R:
+        for cNum in rng:
             sFmt = sFmt + stringifiedNum[cNum]
-            if ((cNum+1) % 3 == 0) and (cNum not in [R[0], R[-1]]):
+            if ((cNum+1) % 3 == 0) and (cNum not in [rng[0], rng[-1]]):
                 sFmt = sFmt + sep
     return sFmt
 
 # TODO: make this work so format, e.g., money w/ 2 dec regardless of $ amount
 #def decimalFormat(x, dec=2):
 #    x = np.round(x, dec)
-#    smartFormat(x, sigFigs=4, sciThresh=[3,3], keepAllSigFigs=False,
+#    smartFormat(x, sigFigs=4, sciThresh=[3, 3], keepAllSigFigs=False,
 #                alignOnDec=False, threeSpacing=False, alwaysShowSign=False,
 #                forcedExp=None, demarc='', alignChar="", leftSep="",
 #                rightSep="", decSep=r".", nanSub=r"NaN",
 #                inftyThresh=np.infty, expLeftFmt=r"e", expRightFmt=""):
- 
 
 
-def texTableFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
+
+def texTableFormat(x, sigFigs=7, sciThresh=(7, 6), keepAllSigFigs=False,
                    alignOnDec=False, threeSpacing=True,
                    alwaysShowSign=False, forcedExp=None, demarc=r'$',
                    alignChar=r"&", leftSep=r"{,}", rightSep=r"{\,}",
@@ -347,7 +353,7 @@ def texTableFormat(x, sigFigs=7, sciThresh=[7,6], keepAllSigFigs=False,
     )
 
 ## TODO: sciThresh ... shouldn't the number on right represent MSD right of dec?
-def simpleFormat(x, sigFigs=4, sciThresh=[3,3], keepAllSigFigs=False,
+def simpleFormat(x, sigFigs=4, sciThresh=(3, 3), keepAllSigFigs=False,
                  alignOnDec=False, threeSpacing=False, alwaysShowSign=False,
                  forcedExp=None, demarc='', alignChar="", leftSep="",
                  rightSep="", decSep=r".", nanSub=r"NaN",
@@ -361,11 +367,11 @@ def simpleFormat(x, sigFigs=4, sciThresh=[3,3], keepAllSigFigs=False,
         expRightFmt=expRightFmt
     )
 
-def lowPrec(x, sigFigs=4, sciThresh=[4,4], keepAllSigFigs=False,
-                 alignOnDec=False, threeSpacing=False, alwaysShowSign=False,
-                 forcedExp=None, demarc='', alignChar="", leftSep="",
-                 rightSep="", decSep=r".", nanSub=r"NaN",
-                 inftyThresh=np.infty, expLeftFmt=r"e", expRightFmt=""):
+def lowPrec(x, sigFigs=4, sciThresh=(4, 4), keepAllSigFigs=False,
+            alignOnDec=False, threeSpacing=False, alwaysShowSign=False,
+            forcedExp=None, demarc='', alignChar="", leftSep="", rightSep="",
+            decSep=r".", nanSub=r"NaN", inftyThresh=np.infty, expLeftFmt=r"e",
+            expRightFmt=""):
     return smartFormat(
         x, sigFigs=sigFigs, sciThresh=sciThresh, keepAllSigFigs=keepAllSigFigs,
         alignOnDec=alignOnDec, threeSpacing=threeSpacing,
@@ -377,7 +383,7 @@ def lowPrec(x, sigFigs=4, sciThresh=[4,4], keepAllSigFigs=False,
 
 def texLP(x,
           sigFigs=4,
-          sciThresh=[4,4],
+          sciThresh=(4, 4),
           keepAllSigFigs=False,
           alignOnDec=False,
           threeSpacing=True,
@@ -385,8 +391,8 @@ def texLP(x,
           forcedExp=None,
           demarc='',
           alignChar="",
-          leftSep="\,",
-          rightSep="\,",
+          leftSep=r"\,",
+          rightSep=r"\,",
           decSep=r".",
           nanSub=r"\mathrm{NaN}",
           inftyThresh=np.infty,
@@ -402,17 +408,18 @@ def texLP(x,
     )
 
 def fnameNumFmt(x, **kwargs):
-        return texLP(x,sciThresh=[100,100], leftSep='',
-                     rightSep='', threeSpacing=False, **kwargs) #sigFigs=5, keepAllSigFigs=False, **kwargs)
+    return texLP(x, sciThresh=[100, 100], leftSep='', rightSep='',
+                 threeSpacing=False, **kwargs)
+    #sigFigs=5, keepAllSigFigs=False, **kwargs)
 
 def numFmt(x, **kwargs):
-        return texLP(x,sciThresh=[10,10], leftSep='\hspace{0.20}',
-                     rightSep='\hspace{0.20}', sigFigs=3, **kwargs)
+    return texLP(x, sciThresh=[10, 10], leftSep=r'\hspace{0.20}',
+                 rightSep=r'\hspace{0.20}', sigFigs=3, **kwargs)
 
 def numFmt2(x, **kwargs):
-        return texLP(x,sciThresh=[10,10], leftSep='\hspace{0.20}',
-                     rightSep='\hspace{0.20}', sigFigs=10,
-                     keepAllSigFigs=False, **kwargs)
+    return texLP(x, sciThresh=[10, 10], leftSep=r'\hspace{0.20}',
+                 rightSep=r'\hspace{0.20}', sigFigs=10, keepAllSigFigs=False,
+                 **kwargs)
 
 def isInt(x, nDec):
     return np.abs(((x + .5) % 1) - .5) < 10**(-nDec)
@@ -420,7 +427,7 @@ def isInt(x, nDec):
 def dispSymMath(symexpr, name=None, delimit=r"=", pre=r"", app=r""):
     """Display in IPython a symbolic expression"""
     import sympy
-    if name == None:
+    if name is None:
         IPython.display.display(IPython.display.Math(
             pre+sympy.latex(symexpr)+app))
     else:
@@ -430,74 +437,78 @@ def dispSymMath(symexpr, name=None, delimit=r"=", pre=r"", app=r""):
 def symTex(symexpr, name=None, dollars=False):
     """Convert a symbolic (sympy) expression to text (TeX) form"""
     import sympy
-    if name == None:
+    if name is None:
         s = sympy.latex(symexpr)
     else:
         s = name+"="+sympy.latex(symexpr)
     if dollars:
         return r"$" + s + r"$"
-    else:
-        return s
+    return s
+
+
+def test():
+    print("Test...")
+    print(smartFormat(0, sigFigs=5, forcedExp=4, keepAllSigFigs=True,
+                      alignOnDec=True))
+    print(smartFormat(0, sigFigs=5, forcedExp=4, keepAllSigFigs=True))
+    print(smartFormat(0, sigFigs=5, forcedExp=4, keepAllSigFigs=False))
+    print(smartFormat(0, sigFigs=5, forcedExp=None, keepAllSigFigs=True))
+    print(smartFormat(0, sigFigs=5, forcedExp=None, keepAllSigFigs=False))
+    print(smartFormat(0, sigFigs=5, forcedExp=None, keepAllSigFigs=False,
+                      alignOnDec=True))
+    print('')
+    print(smartFormat(0.00010001, sigFigs=6, forcedExp=4, keepAllSigFigs=True))
+    print(smartFormat(0.00010001, sigFigs=6, forcedExp=None,
+                      keepAllSigFigs=True))
+    print(smartFormat(0.00010001, sigFigs=6, forcedExp=None,
+                      keepAllSigFigs=False))
+    print(smartFormat(0.00010001, sigFigs=6, forcedExp=None,
+                      keepAllSigFigs=False, sciThresh=[7, 8]))
+    print(smartFormat(0.00010001, sigFigs=6, forcedExp=None,
+                      keepAllSigFigs=True, sciThresh=[7, 20]))
+    print('')
+    print(smartFormat(1, sigFigs=5, forcedExp=None, keepAllSigFigs=True))
+    print(smartFormat(1, sigFigs=5, forcedExp=None, keepAllSigFigs=False))
+    print(smartFormat(16, sigFigs=5, forcedExp=None, keepAllSigFigs=False))
+    print(smartFormat(160000, sigFigs=5, forcedExp=None, keepAllSigFigs=False))
+    print(smartFormat(123456789, sigFigs=15, forcedExp=None,
+                      keepAllSigFigs=False, sciThresh=[20, 20]))
+    print(smartFormat(1.6e6, sigFigs=5, forcedExp=None, keepAllSigFigs=False))
+    print(smartFormat(1e6, sigFigs=5, forcedExp=None, keepAllSigFigs=False))
+    print(smartFormat(0.00134, sigFigs=5, forcedExp=None, keepAllSigFigs=False))
+    print('')
+    print(smartFormat(1))
+    print(smartFormat(12))
+    print(smartFormat(123))
+    print(smartFormat(1234))
+    print(smartFormat(12345))
+    print(smartFormat(123456))
+    print(smartFormat(1234567))
+    print(smartFormat(12345678))
+    print(smartFormat(123456789))
+    #print(smartFormat(0.1e-3))
+    #print(smartFormat(-0.1e-1, 5))
+    #print(smartFormat(-0.1e-0, 5))
+    #print('')
+    #print(smartFormat(-0.1e-3, 4))
+    #print(smartFormat(-0.1e-3, 3))
+    #print(smartFormat(-0.1e-3, 2))
+    #print(smartFormat(-0.1e-3, 1))
+    #print('')
+    #print(smartFormat(-0.1e-3, 4))
+    #print(smartFormat(-0.12e-3, 4))
+    #print(smartFormat(-0.123e-3, 4))
+    #print(smartFormat(-0.1234e-3, 4))
+    #print(smartFormat(-0.12345e-3, 4))
+    #print('')
+    #print(smartFormat(-1.2345678e0, 5))
+    #print(smartFormat(-1.2345678e1, 5))
+    #print(smartFormat(-1.2345678e2, 5))
+    #print(smartFormat(-1.2345678e3, 5))
+    #print(smartFormat(-1.2345678e4, 5))
+    #print(smartFormat(-1.2345678e5, 5))
+    #print(smartFormat(-1.2345678e6, 5))
 
 
 if __name__ == "__main__":
-    print "Test..."
-    print smartFormat(0,sigFigs=5,forcedExp=4,keepAllSigFigs=True,
-                    alignOnDec=True)
-    print smartFormat(0,sigFigs=5,forcedExp=4,keepAllSigFigs=True)
-    print smartFormat(0,sigFigs=5,forcedExp=4,keepAllSigFigs=False)
-    print smartFormat(0,sigFigs=5,forcedExp=None,keepAllSigFigs=True)
-    print smartFormat(0,sigFigs=5,forcedExp=None,keepAllSigFigs=False)
-    print smartFormat(0,sigFigs=5,forcedExp=None,keepAllSigFigs=False,
-                    alignOnDec=True)
-    print ''
-    print smartFormat(0.00010001,sigFigs=6,forcedExp=4,keepAllSigFigs=True)
-    print smartFormat(0.00010001,sigFigs=6,forcedExp=None,keepAllSigFigs=True)
-    print smartFormat(0.00010001,sigFigs=6,forcedExp=None,keepAllSigFigs=False)
-    print smartFormat(0.00010001,sigFigs=6,forcedExp=None,keepAllSigFigs=False,
-                    sciThresh=[7,8])
-    print smartFormat(0.00010001,sigFigs=6,forcedExp=None,keepAllSigFigs=True,
-                    sciThresh=[7,20])
-    print ''
-    print smartFormat(1,sigFigs=5,forcedExp=None,keepAllSigFigs=True)
-    print smartFormat(1,sigFigs=5,forcedExp=None,keepAllSigFigs=False)
-    print smartFormat(16,sigFigs=5,forcedExp=None,keepAllSigFigs=False)
-    print smartFormat(160000,sigFigs=5,forcedExp=None,keepAllSigFigs=False)
-    print smartFormat(123456789,sigFigs=15,forcedExp=None,keepAllSigFigs=False,
-                    sciThresh=[20,20])
-    print smartFormat(1.6e6,sigFigs=5,forcedExp=None,keepAllSigFigs=False)
-    print smartFormat(1e6,sigFigs=5,forcedExp=None,keepAllSigFigs=False)
-    print smartFormat(0.00134,sigFigs=5,forcedExp=None,keepAllSigFigs=False)
-    print ''
-    print smartFormat(1)
-    print smartFormat(12)
-    print smartFormat(123)
-    print smartFormat(1234)
-    print smartFormat(12345)
-    print smartFormat(123456)
-    print smartFormat(1234567)
-    print smartFormat(12345678)
-    print smartFormat(123456789)
-    #print smartFormat(0.1e-3)
-    #print smartFormat(-0.1e-1,5)
-    #print smartFormat(-0.1e-0,5)
-    #print ''
-    #print smartFormat(-0.1e-3,4)
-    #print smartFormat(-0.1e-3,3)
-    #print smartFormat(-0.1e-3,2)
-    #print smartFormat(-0.1e-3,1)
-    #print ''
-    #print smartFormat(-0.1e-3,4)
-    #print smartFormat(-0.12e-3,4)
-    #print smartFormat(-0.123e-3,4)
-    #print smartFormat(-0.1234e-3,4)
-    #print smartFormat(-0.12345e-3,4)
-    #print ''
-    #print smartFormat(-1.2345678e0,5)
-    #print smartFormat(-1.2345678e1,5)
-    #print smartFormat(-1.2345678e2,5)
-    #print smartFormat(-1.2345678e3,5)
-    #print smartFormat(-1.2345678e4,5)
-    #print smartFormat(-1.2345678e5,5)
-    #print smartFormat(-1.2345678e6,5)
-
+    test()
