@@ -9,7 +9,7 @@ separate files.
 from __future__ import absolute_import, division, print_function
 
 from argparse import ArgumentParser
-from os.path import expanduser, expandvars, isfile, splitext
+from os.path import expanduser, expandvars, isfile, split, splitext
 
 
 S_BOTH = 0
@@ -46,6 +46,7 @@ def unmerge(fpath):
 
     """
     fpath = expanduser(expandvars(fpath))
+    #srcdir, fpath = split(fpath)
     basepath, ext = splitext(fpath)
     with open(fpath, 'r') as fhandle:
         contents = fhandle.readlines()
@@ -60,7 +61,7 @@ def unmerge(fpath):
                                  .format(line_no))
             state = S_F0_ONLY
             if f0_name is None:
-                f0_name = line.lstrip('<<<<<<< ').strip()
+                f0_name = line.lstrip('<<<<<<< ').strip().replace('/', '_')
             continue
         elif line.startswith('======='):
             if state != S_F0_ONLY:
@@ -74,7 +75,7 @@ def unmerge(fpath):
                                  .format(line_no))
             state = S_BOTH
             if f1_name is None:
-                f1_name = line.lstrip('>>>>>>> ').strip()
+                f1_name = line.lstrip('>>>>>>> ').strip().replace('/', '_')
             continue
 
         if state in (S_BOTH, S_F0_ONLY):
